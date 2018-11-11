@@ -9,6 +9,7 @@ var BitFont = function ( src, alphabet, charW, charH ) {
    this.alphabet = alphabet;
 
    // The default size of each character
+   this.charWBase = charW; // Base character width (used for spaces)
    this.charW = []; // Width (pixels)
    this.charH = []; // Height (pixels)
 
@@ -17,6 +18,7 @@ var BitFont = function ( src, alphabet, charW, charH ) {
 
    // Bounding boxes for each character; to be computed with method finalize
    this.charBBoxes = [];
+   this.finalized = false;
 
    // Initializes char size vectors with default values
    for ( var i = 0; i < this.alphabet.length; ++i ) {
@@ -40,6 +42,12 @@ var BitFont = function ( src, alphabet, charW, charH ) {
 
    // Render character; returns width of printed character
    this.renderChar = function ( ctxt, x, y, char ) {
+      if ( !this.finalized ) // Finalize if necessary
+         this.finalize();
+
+      if ( char == " " )
+         return this.charWBase;
+
       var chidx = this.ch(char);
       var bbox = this.charBBoxes[chidx];
       ctxt.drawImage ( this.img, bbox[0], bbox[1], bbox[2], bbox[3], x, y, bbox[2], bbox[3] );
@@ -55,7 +63,7 @@ var BitFont = function ( src, alphabet, charW, charH ) {
             y += this.baselineSkip;
             x = startX;
          }
-         
+
          else x += this.renderChar ( ctxt, x, y, text.charAt(i) );
       }
    }

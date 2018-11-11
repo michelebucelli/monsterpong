@@ -91,6 +91,8 @@ var Monster = function ( ) {
 var cnvs = 0; // Canvas reference
 var ctxt = 0; // 2D context of cnvs
 
+var m = new Monster();
+
 // Setup function
 // Called on page load; sets up DOM variables and callbacks
 var setup = function ( ) {
@@ -120,4 +122,16 @@ var setup = function ( ) {
    font.charH [ font.ch(",") ] = font.charH [ font.ch(";") ] = 27;
    font.baselineSkip = 27;
    font.finalize ();
+
+   // Showcase!
+   setInterval ( function() {
+      m.randomize();
+
+      ctxt.fillStyle = "black";
+      ctxt.fillRect ( 0, 0, cnvs.width, cnvs.height );
+
+      m.draw ( ctxt, 0, 0 );
+      font.renderText ( ctxt, frameWidth + 18, frameHeight - 7*font.baselineSkip + 3,
+         "HELLO!\neyes: " + m.eyes + "\nnose: " + m.nose + "\nmouth: " + m.mouth + "\nears: " + m.ears + "\nextra: " + m.extra );
+   }, 1000 );
 }
