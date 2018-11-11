@@ -49,8 +49,17 @@ var loadImages = function ( ) {
 
 // Game logic //////////////////////////////////////////////////////////////////
 
+var names = new RandName ( [ [ "jo", "al", "mi", "re", "ba" ], // Eyes
+                             [ "up", "op", "st", "cr" ], // Nose
+                             [ "se", "to", "an", "if", "" ], // Mouth,
+                             [ "", "do", "un" ], // Ears
+                             [ "ling", "dog", "ler" ] ] ); // Extra
+
 // Monster class
 var Monster = function ( ) {
+   // Misc info ////////////////////////////////////////////////////////////////
+   this.name = "";
+
    // Graphics /////////////////////////////////////////////////////////////////
    this.color = 0;
 
@@ -73,6 +82,10 @@ var Monster = function ( ) {
       ctxt.drawImage ( imgEars[this.ears], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Ears
    }
 
+   // Statistics ///////////////////////////////////////////////////////////////
+   this.maxHP = 10;
+   this.hp = 10;
+
    // Miscellaneous ////////////////////////////////////////////////////////////
 
    // Randomly assigns values to the monster parts
@@ -83,6 +96,48 @@ var Monster = function ( ) {
       this.mouth = Math.floor ( Math.random() * mouthsNumber );
       this.ears = Math.floor ( Math.random() * earsNumber );
       this.extra = Math.floor ( Math.random() * extraNumber );
+      this.name = names.get ( [ this.eyes, this.nose, this.mouth, this.ears, this.extra ] );
+   }
+}
+
+// Game class
+var Game = function ( ) {
+   // Game state
+   // 0 = not yet begun
+   // 1 = waiting for player action
+   this.state = 0;
+
+   // Player monster
+   this.player = new Monster();
+
+   // Cards
+   this.cards = [ 0, 0, 0 ];
+
+   // Killed monsters counter
+   this.killed = 0;
+
+   // Logics ///////////////////////////////////////////////////////////////////
+
+   // Setup the game
+   this.setup = function ( ) {
+      this.player.randomize();
+   }
+
+   // Graphics /////////////////////////////////////////////////////////////////
+
+   this.draw = function ( ctxt ) {
+      var H = ctxt.canvas.height;
+      var W = ctxt.canvas.width;
+
+      // Draw the player
+      ctxt.drawImage ( imgFrame, 15, H - frameHeight - 15 );
+      this.player.draw ( ctxt, 15, H - frameHeight - 15 );
+      font.renderText ( ctxt, 15 + frameWidth + 15, H - 15 - font.baselineSkip, this.player.name );
+
+      // Draw the option cards
+      for ( var i = 0; i < 3; ++i ) {
+         ctxt.drawImage ( imgFrame, 15 + i * (frameWidth + 15), 15 );
+      }
    }
 }
 
@@ -91,7 +146,7 @@ var Monster = function ( ) {
 var cnvs = 0; // Canvas reference
 var ctxt = 0; // 2D context of cnvs
 
-var m = new Monster();
+var g = new Game();
 
 // Setup function
 // Called on page load; sets up DOM variables and callbacks
@@ -123,15 +178,14 @@ var setup = function ( ) {
    font.baselineSkip = 27;
    font.finalize ();
 
-   // Showcase!
-   setInterval ( function() {
-      m.randomize();
+   // Setup game
+   g.setup();
 
-      ctxt.fillStyle = "black";
-      ctxt.fillRect ( 0, 0, cnvs.width, cnvs.height );
+   requestAnimationFrame ( draw );
+}
 
-      m.draw ( ctxt, 0, 0 );
-      font.renderText ( ctxt, frameWidth + 18, frameHeight - 7*font.baselineSkip + 3,
-         "HELLO!\neyes: " + m.eyes + "\nnose: " + m.nose + "\nmouth: " + m.mouth + "\nears: " + m.ears + "\nextra: " + m.extra );
-   }, 1000 );
+// Drawing function
+var draw = function () {
+   requestAnimationFrame ( draw );
+   g.draw ( ctxt );
 }

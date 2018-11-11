@@ -38,6 +38,8 @@ var BitFont = function ( src, alphabet, charW, charH ) {
          this.charBBoxes.push([x, 0, this.charW[i], this.charH[i]]);
          x += this.charW[i];
       }
+
+      finalized = true;
    }
 
    // Render character; returns width of printed character
@@ -54,7 +56,7 @@ var BitFont = function ( src, alphabet, charW, charH ) {
       return bbox[2];
    }
 
-   // Render text line
+   // Render text
    this.renderText = function ( ctxt, x, y, text ) {
       var startX = x;
 
