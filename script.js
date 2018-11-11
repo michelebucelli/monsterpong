@@ -1,5 +1,7 @@
 // Global graphics /////////////////////////////////////////////////////////////
 
+var font = 0;
+
 // Number of available options for each part. The values imply that the
 // corresponding member of a monster can take any integer value from 1 to num-1
 const colorNumber = 3;
@@ -59,6 +61,9 @@ var Monster = function ( ) {
    this.ears = 0;
    this.extra = 0;
 
+   // Draws the monster
+   //    ctxt: context to draw on
+   //    x,y: coordinates for the upper-left corner of the frame
    this.draw = function ( ctxt, x, y ) {
       ctxt.drawImage ( imgBody, this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Body
       ctxt.drawImage ( imgExtra[this.extra], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Extra
@@ -69,6 +74,8 @@ var Monster = function ( ) {
    }
 
    // Miscellaneous ////////////////////////////////////////////////////////////
+
+   // Randomly assigns values to the monster parts
    this.randomize = function ( ) {
       this.color = Math.floor ( Math.random() * colorNumber );
       this.eyes = Math.floor ( Math.random() * eyesNumber );
@@ -84,8 +91,6 @@ var Monster = function ( ) {
 var cnvs = 0; // Canvas reference
 var ctxt = 0; // 2D context of cnvs
 
-var m1 = 0, m2 = 0, m3 = 0, m4 = 0;
-
 // Setup function
 // Called on page load; sets up DOM variables and callbacks
 var setup = function ( ) {
@@ -96,20 +101,23 @@ var setup = function ( ) {
    // Preload images
    loadImages();
 
-   m1 = new Monster();
-   m2 = new Monster();
-   m3 = new Monster();
-   m4 = new Monster();
-
-   document.onkeypress = function ( ) {
-      ctxt.fillStyle = "black";
-      ctxt.fillRect ( 0, 0, cnvs.width, cnvs.height );
-
-      m1.randomize(); m1.draw ( ctxt, 0, 0 );
-      m2.randomize(); m2.draw ( ctxt, frameWidth, 0 );
-      m3.randomize(); m3.draw ( ctxt, 2*frameWidth, 0 );
-      m4.randomize(); m4.draw ( ctxt, 3*frameWidth, 0 );
-   }
-
-   document.onkeypress();
+   // Setup bitmap font
+   font = new BitFont ( "./gfx/font.png", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890!?.,;:", 15, 24 );
+   font.charW [ font.ch("I") ] = 6;
+   font.charW [ font.ch("J") ] = 12;
+   font.charW [ font.ch("M") ] = 18;
+   font.charW [ font.ch("T") ] = 12;
+   font.charW [ font.ch("W") ] = 18;
+   font.charW [ font.ch("i") ] = 6;
+   font.charW [ font.ch("j") ] = 9;
+   font.charW [ font.ch("l") ] = 6;
+   font.charW [ font.ch("m") ] = 18;
+   font.charW [ font.ch("w") ] = 18;
+   font.charW [ font.ch("1") ] = 9;
+   font.charW [ font.ch("!") ] = 6;
+   font.charH [ font.ch("g") ] = font.charH [ font.ch("j") ] = font.charH [ font.ch("p") ] = font.charH [ font.ch("q") ] = font.charH [ font.ch("y") ] = 30;
+   font.charW [ font.ch(".") ] = font.charW [ font.ch(",") ] = font.charW [ font.ch(";") ] = font.charW [ font.ch(":") ] = 6;
+   font.charH [ font.ch(",") ] = font.charH [ font.ch(";") ] = 27;
+   font.baselineSkip = 27;
+   font.finalize ();
 }
