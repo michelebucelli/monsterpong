@@ -49,11 +49,11 @@ var loadImages = function ( ) {
 
 // Game logic //////////////////////////////////////////////////////////////////
 
-var names = new RandName ( [ [ "jo", "al", "mi", "re", "ba" ], // Eyes
-                             [ "up", "op", "st", "cr" ], // Nose
-                             [ "se", "to", "an", "if", "" ], // Mouth,
-                             [ "", "do", "un" ], // Ears
-                             [ "ling", "dog", "ler" ] ] ); // Extra
+var names = new RandName ( [ [ "s", "r", "t", "w", "m" ], // Eyes
+                             [ "a", "oo", "o", "e" ], // Nose
+                             [ "ck", "t", "r", "n", "v" ], // Mouth,
+                             [ "i", "a", "e" ], // Ears
+                             [ "bull", "dog", "ler" ] ] ); // Extra
 
 // Monster class
 var Monster = function ( ) {
@@ -85,6 +85,10 @@ var Monster = function ( ) {
    // Statistics ///////////////////////////////////////////////////////////////
    this.maxHP = 10;
    this.hp = 10;
+
+   this.atk = 10;
+   this.def = 10;
+   this.reg = 0;
 
    // Miscellaneous ////////////////////////////////////////////////////////////
 
@@ -132,11 +136,15 @@ var Game = function ( ) {
       // Draw the player
       ctxt.drawImage ( imgFrame, 15, H - frameHeight - 15 );
       this.player.draw ( ctxt, 15, H - frameHeight - 15 );
-      font.renderText ( ctxt, 15 + frameWidth + 15, H - 15 - font.baselineSkip, this.player.name );
+
+      // Player info
+      font.renderText ( ctxt, 30 + frameWidth + 15, H - frameHeight - 12,
+            this.player.name + "\n\nhp: " + this.player.hp + "\natk: " + this.player.atk + "\ndef: " + this.player.def
+          + "\nreg: " + this.player.reg + "\n\nkilled: " + this.killed );
 
       // Draw the option cards
       for ( var i = 0; i < 3; ++i ) {
-         ctxt.drawImage ( imgFrame, 15 + i * (frameWidth + 15), 15 );
+         ctxt.drawImage ( imgFrame, 15 + i * (frameWidth + 45), 15 );
       }
    }
 }
