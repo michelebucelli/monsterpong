@@ -1,6 +1,8 @@
 // Bitmap font on canvas
 var BitFont = function ( src, alphabet, charW, charH ) {
    // Source image for the bitmap font
+   // Should have one line for each color containing all the alphabet; the
+   // height of this line is specified by the member colorLineHeight
    this.img = new Image();
    this.img.src = src;
 
@@ -12,6 +14,9 @@ var BitFont = function ( src, alphabet, charW, charH ) {
    this.charWBase = charW; // Base character width (used for spaces)
    this.charW = []; // Width (pixels)
    this.charH = []; // Height (pixels)
+
+   // Height of the line corresponding to a color
+   this.colorLineHeight = charH;
 
    // Baseline skip (how much to skip when newline)
    this.baselineSkip = charH + 1;
@@ -33,17 +38,18 @@ var BitFont = function ( src, alphabet, charW, charH ) {
 
    // Pre-computes the bounding boxes for each character
    this.finalize = function ( ) {
+      console.log ( "FINALIZING BITMAP FONT" );
       var x = 0;
       for ( var i = 0; i < this.alphabet.length; ++i ) { // For each character in the alphabet
          this.charBBoxes.push([x, 0, this.charW[i], this.charH[i]]);
          x += this.charW[i];
       }
 
-      finalized = true;
+      this.finalized = true;
    }
 
    // Render character; returns width of printed character
-   this.renderChar = function ( ctxt, x, y, char ) {
+   this.renderChar = function ( ctxt, x, y, char, color ) {
       if ( !this.finalized ) // Finalize if necessary
          this.finalize();
 
@@ -51,13 +57,16 @@ var BitFont = function ( src, alphabet, charW, charH ) {
          return this.charWBase;
 
       var chidx = this.ch(char);
-      var bbox = this.charBBoxes[chidx];
-      ctxt.drawImage ( this.img, bbox[0], bbox[1], bbox[2], bbox[3], x, y, bbox[2], bbox[3] );
-      return bbox[2];
+      if ( chidx > 0 ) {
+         var bbox = this.charBBoxes[chidx];
+         ctxt.drawImage ( this.img, bbox[0], bbox[1] + color*this.colorLineHeight, bbox[2], bbox[3], x, y, bbox[2], bbox[3] );
+         return bbox[2];
+      }
+      else return this.charWBase;
    }
 
    // Render text
-   this.renderText = function ( ctxt, x, y, text ) {
+   this.renderText = function ( ctxt, x, y, text, color ) {
       var startX = x;
 
       for ( var i = 0; i < text.length; ++i ) {
@@ -66,7 +75,7 @@ var BitFont = function ( src, alphabet, charW, charH ) {
             x = startX;
          }
 
-         else x += this.renderChar ( ctxt, x, y, text.charAt(i) );
+         else x += this.renderChar ( ctxt, x, y, text.charAt(i), color );
       }
    }
 }
