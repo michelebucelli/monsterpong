@@ -23,6 +23,9 @@ const extraNumber = 3;
 // Size of the reference frame. Used to crop sprite sheets. Pixels
 const frameWidth = 150;
 const frameHeight = 216;
+const brickWidth = 84;
+const brickHeight = 48;
+const paddleHeight = 27;
 
 // Positioning of the selected frame
 const selFrameDX = -6;
@@ -38,6 +41,9 @@ var imgMouth = 0;
 var imgEars = 0;
 var imgExtra = 0;
 var imgHPbar = 0;
+var imgBricks = 0;
+var imgPaddle = 0;
+var imgBall = 0;
 
 // Loads an array of images from a folder
 var loadImagesArray = function ( folder, n ) {
@@ -57,6 +63,10 @@ var loadImages = function ( ) {
    imgFrameSelected = new Image(); imgFrameSelected.src = "./gfx/frame_selected.png";
    imgBody = new Image(); imgBody.src = "./gfx/body.png";
    imgHPbar = new Image(); imgHPbar.src = "./gfx/healthbar.png";
+   imgBricks = new Image(); imgBricks.src = "./gfx/bricks.png";
+   imgPaddle = new Image(); imgPaddle.src = "./gfx/paddles.png";
+   imgBall = new Image(); imgBall.src = "./gfx/ball.png";
+
    imgEyes = loadImagesArray ( "./gfx/eyes", eyesNumber );
    imgNose = loadImagesArray ( "./gfx/noses", nosesNumber );
    imgMouth = loadImagesArray ( "./gfx/mouths", mouthsNumber );
@@ -75,6 +85,9 @@ var hpBar = function ( ctxt, x, y, w, fill ) {
 }
 
 // Game logic //////////////////////////////////////////////////////////////////
+
+const paddleAccel = 20; // Paddle acceleration [pixels/s^2]
+const paddleDamp = 0.05; // Paddle damping factor [
 
 var names = new RandName ( [ [ "Green ", "Blue ", "Red " ], // Color
                              [ "S", "R", "T", "W", "M" ], // Eyes
@@ -186,121 +199,191 @@ var hybridate = function ( a, b, wa, wb ) {
    a.hp = Math.ceil ( oldHP * a.maxHP );
 }
 
+// Breakout brick class
+var BreakoutBrick = function ( ) {
+   // Color
+   this.color = 0;
+
+   // Level
+   // Determines both the appearance of the brick and the amount of hits it can take
+   // Levels 0,1,2,3 are breakable, level 4 is indestructible
+   this.level = 0;
+
+   // Brick dimensions [pixels], format [x,y,w,h]
+   this.p = [ 0, 0, brickWidth, brickHeight ];
+
+   // Draw the brick
+   this.draw = function ( ctxt ) {
+      ctxt.drawImage ( imgBricks, this.color * this.p[2], this.level * this.p[3], this.p[2], this.p[3],
+                       this.p[0], this.p[1], this.p[2], this.p[3] );
+   }
+}
+
+// Breakout paddle class
+var BreakoutPaddle = function ( ) {
+   this.x = 0; // Position of the paddle [pixels]
+   this.v = 0; // Velocity of the paddle [pixels/s]
+   this.w = 96; // Width of the paddle [pixels]
+
+   // Paddle direction flag
+   // -1: moving left, 0: not moving, 1: moving right
+   this.dir = 0;
+
+   // Paddle color
+   this.color = 1;
+
+   // Draw the paddle
+   this.draw = function ( ctxt, y ) {
+      // Paddle begin
+      ctxt.drawImage ( imgPaddle, 0, this.color * paddleHeight, 21, paddleHeight,
+                       this.x - this.w / 2, y, 21, paddleHeight );
+
+      // Paddle mid part
+      for ( var ww = 21 ; ww < this.w - 21; ww += 3 )
+         ctxt.drawImage ( imgPaddle, 21, this.color * paddleHeight, 3, paddleHeight,
+                          this.x - this.w / 2 + ww, y, 3, paddleHeight );
+
+      // Paddle end
+      ctxt.drawImage ( imgPaddle, 51, this.color * paddleHeight, 21, paddleHeight,
+                       this.x + this.w / 2 - 21, y, 21, paddleHeight );
+   }
+
+   // Update the paddle
+   this.update = function ( t ) {
+   }
+}
+
+// Breakout class
+var Breakout = function ( ) {
+   // Position of the paddles of the two players
+   this.paddles = [ new BreakoutPaddle(), new BreakoutPaddle() ];
+
+   // Bricks
+   this.bricks = [];
+
+   // Balls
+   this.balls = [];
+
+   // Field size
+   this.width = 747;
+   this.height = 576;
+
+   // Breakout setup
+   this.setup = function ( ) {
+      this.width = cnvs.width;
+      this.height = cnvs.height;
+      this.randomize();
+   }
+
+   // Generate random field
+   this.randomize = function ( ) {
+      this.bricks = [];
+
+      var cols = cnvs.width / brickWidth;
+      var rows = cnvs.height / brickHeight;
+
+      console.log ( "GENERATING BREAKOUT FIELD, " + cols + " columns, " + rows + " rows" );
+
+      for ( var i = 0; i < 8; ++i ) {
+         var duplicate = 1;
+         var col = 0, row = 0;
+         while ( duplicate ) {
+            row = Math.floor ( Math.random() * (rows / 2 - 4) );
+
+            var maxCol = cols / 2 - (row % 2 == 0);
+            col = Math.floor ( Math.random() * maxCol );
+
+            duplicate = 0;
+            for ( var j = 0; j < this.bricks.length; ++j ) {
+               if ( this.bricks[j].p[0] == col && this.bricks[j].p[1] == row ) {
+                  duplicate = 1;
+                  break;
+               }
+            }
+         }
+
+         var color = Math.floor ( Math.random() * colorNumber );
+         var level = Math.floor ( Math.random() * 5 );
+         if ( level == 4 ) color = 0;
+
+         var b1 = new BreakoutBrick();
+         b1.p[0] = col;
+         b1.p[1] = row;
+         b1.color = color; b1.level = level;
+         this.bricks.push ( b1 );
+
+         var b4 = new BreakoutBrick();
+         b4.p[0] = col;
+         b4.p[1] = (-row);
+         b4.color = color; b4.level = level;
+         this.bricks.push ( b4 );
+
+         if ( row % 2 != 0 || col != 0 ) {
+            var b2 = new BreakoutBrick();
+            b2.p[0] = row % 2 == 0 ? -col : -1-col;
+            b2.p[1] = row;
+            b2.color = color; b2.level = level;
+            this.bricks.push ( b2 );
+
+            var b3 = new BreakoutBrick();
+            b3.p[0] = row % 2 == 0 ? -col : -1-col;
+            b3.p[1] = (-row);
+            b3.color = color; b3.level = level;
+            this.bricks.push ( b3 );
+         }
+      }
+
+      for ( var i = 0; i < this.bricks.length; ++i ) {
+         this.bricks[i].p[0] *= brickWidth;
+         if ( this.bricks[i].p[1] % 2 == 0 ) this.bricks[i].p[0] -= brickWidth / 2;
+
+         this.bricks[i].p[1] *= brickHeight;
+      }
+   }
+
+   // Breakout draw
+   this.draw = function ( ctxt ) {
+      // Draw the bricks
+      for ( var i = 0; i < this.bricks.length; ++i )
+         this.bricks[i].draw ( ctxt );
+
+      // Draw the paddles
+      this.paddles[0].draw ( ctxt, cnvs.height / 2 - brickHeight - paddleHeight - 3 );
+      this.paddles[1].draw ( ctxt, -cnvs.height / 2 + brickHeight + 3 );
+   }
+
+   // Breakout update
+   this.update = function ( t ) {
+   }
+}
+
 // Game class
 var Game = function ( ) {
    // Game state
-   // 0 = not yet begun
-   // 1 = waiting for player action
+   // 0 = game not setup
+   // 1 = breakout phase
+   // 2 = loot phase
+   // 3 = game over
    this.state = 0;
 
-   // Player monster
-   this.player = new Monster();
+   // Breakout game object
+   this.breakout = new Breakout();
 
-   // Cards
-   this.cards = [ 0, 0, 0 ];
-
-   // Selected card
-   this.selected = 1;
-
-   // Killed monsters counter
-   this.killed = 0;
-
-   // Logics ///////////////////////////////////////////////////////////////////
-
-   // Setup the game
+   // Game setup function
    this.setup = function ( ) {
-      this.player.randomizeParts();
-      this.player.randomizeStats(20,5);
-      this.randomCard ( 0 );
-      this.randomCard ( 1 );
-      this.randomCard ( 2 );
+      this.breakout.setup();
+      this.state = 1;
    }
 
-   // Randomly generates a card
-   this.randomCard = function ( i ) {
-      this.cards[i] = {
-         type: "monster",
-         info: function() { return this.monster.info(); },
-         monster: new Monster()
-      };
-      this.cards[i].monster.randomizeParts();
-      this.cards[i].monster.randomizeStats(10, 5+2*this.killed);
-   }
-
-   // Action on card (fight monster)
-   this.action = function ( target ) {
-      if ( this.cards[target] == 0 ) return;
-      if ( this.cards[target].type == "monster" ) {
-         var outcome = fight ( this.player, this.cards[target].monster );
-
-         if ( outcome == 1 ) { // Player loses, GAME OVER!
-            console.log ( "GAME OVER (not really though... not implemented yet)" );
-            // TODO
-         }
-
-         else if ( outcome == 2 ) {
-            this.killed++;
-            hybridate ( this.player, this.cards[target].monster, 0.8, 0.2 );
-            this.randomCard ( target );
-         }
-      }
-
-      // Regeneration
-      this.player.hp = Math.min ( this.player.hp + this.player.reg, this.player.maxHP );
-      for ( var i = 0; i < 3; ++i )
-         if ( this.cards[i] != 0 && this.cards[i].type == "monster" )
-            this.cards[i].monster.hp = Math.min ( this.cards[i].monster.hp + this.cards[i].monster.reg, this.cards[i].monster.maxHP );
-   }
-
-   // Graphics /////////////////////////////////////////////////////////////////
-
+   // Draw game function
    this.draw = function ( ctxt ) {
-      var H = ctxt.canvas.height;
-      var W = ctxt.canvas.width;
-
-      // Draw the player
-      ctxt.drawImage ( imgFrame, 15, H - frameHeight - 15 );
-      this.player.draw ( ctxt, 15, H - frameHeight - 15 );
-      hpBar ( ctxt, 36, H - 27, frameWidth - 42, this.player.hp / this.player.maxHP );
-
-      // Player info
-      ctxt.fillStyle = "white";
-      ctxt.text ( 30 + frameWidth, H - frameHeight - 15, this.player.info() + "\n\nkilled: " + this.killed, 0 );
-      ctxt.vline ( W/2, H - frameHeight - 12, H - 18 );
-
-      // Draw the option cards
-      for ( var i = 0; i < 3; ++i ) {
-         if ( this.cards[i] == 0 ) continue;
-
-         var x = Math.floor(((W - 3*frameWidth - 2*45)/2)/3)*3 + i * (frameWidth + 45);
-         var y = 60;
-
-         if ( this.selected == i )
-            ctxt.drawImage ( imgFrameSelected, x + selFrameDX, y + selFrameDY );
-         else
-            ctxt.drawImage ( imgFrame, x, y );
-
-         if ( this.cards[i].type == "monster" ) { // Monster card: draw the monster
-            this.cards[i].monster.draw ( ctxt, x, y );
-            hpBar ( ctxt, x + 21, y + frameHeight - 12, frameWidth - 42, this.cards[i].monster.hp / this.cards[i].monster.maxHP );
-         }
-      }
-
-      // Info about the selected card
-      if ( this.cards[this.selected].type == "monster" ) {
-         var y = H - frameHeight - 15;
-         var m = this.cards[this.selected].monster;
-         var col = function ( a, b ) { if ( a < b ) return 1; if ( a == b ) return 0; if ( a > b ) return 4; }
-
-         ctxt.text ( W/2 + 15, y, m.name, 0 ); y += 2*font.baselineSkip;
-         ctxt.text ( W/2 + 15, y, "hp: " + m.hp + "/" + m.maxHP, col ( m.maxHP, this.player.maxHP ) ); y += font.baselineSkip;
-         ctxt.text ( W/2 + 15, y, "atk: " + m.atk, col ( m.atk, this.player.atk ) ); y += font.baselineSkip;
-         ctxt.text ( W/2 + 15, y, "def: " + m.def, col ( m.def, this.player.def ) ); y += font.baselineSkip;
-         ctxt.text ( W/2 + 15, y, "reg: " + m.reg, col ( m.reg, this.player.reg ) ); y += 2*font.baselineSkip;
-
-         ctxt.text ( W/2 + 15, y, "dmg give: " + Math.max(this.player.atk - m.def,1) + " dmg take: " + Math.max(m.atk - this.player.def,1), 0 );
+      if ( this.state == 1 ) {
+         this.breakout.draw ( ctxt );
       }
    }
+
+   // Update game function
+   this.update = function ( t ) { }
 }
 
 // Flow handling ///////////////////////////////////////////////////////////////
@@ -357,16 +440,6 @@ var setup = function ( ) {
 
    // Keyboard callbacks
    document.onkeydown = function ( e ) {
-      if ( e.key == "ArrowLeft" ) { // Left key
-         g.selected = (g.selected - 1);
-         if ( g.selected < 0 ) g.selected = 2;
-      }
-      else if ( e.key == "ArrowRight" ) { // Right key
-         g.selected = (g.selected + 1) % 3;
-      }
-      else if ( e.key == " " ) { // Space: action
-         g.action ( g.selected );
-      }
    }
 
    // Setup game
@@ -382,5 +455,7 @@ var draw = function () {
    ctxt.fillStyle = "black";
    ctxt.fillRect ( 0, 0, cnvs.width, cnvs.height );
 
+   ctxt.save(); ctxt.translate ( cnvs.width/2, cnvs.height/2 );
    g.draw ( ctxt );
+   ctxt.restore();
 }
