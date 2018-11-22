@@ -26,6 +26,7 @@ const frameHeight = 216;
 const brickWidth = 84;
 const brickHeight = 48;
 const paddleHeight = 27;
+const ballSize = 18;
 
 // Positioning of the selected frame
 const selFrameDX = -6;
@@ -86,8 +87,9 @@ var hpBar = function ( ctxt, x, y, w, fill ) {
 
 // Game logic //////////////////////////////////////////////////////////////////
 
-const paddleAccel = 20; // Paddle acceleration [pixels/s^2]
-const paddleDamp = 0.05; // Paddle damping factor [
+const paddleAccel = 5000; // Paddle acceleration [pixels/s^2]
+const paddleDamp = 10; // Paddle damping factor [1/s]
+const ballSpeed = 300; // Ball speed [pixels/second]
 
 var names = new RandName ( [ [ "Green ", "Blue ", "Red " ], // Color
                              [ "S", "R", "T", "W", "M" ], // Eyes
@@ -223,7 +225,7 @@ var BreakoutBrick = function ( ) {
 var BreakoutPaddle = function ( ) {
    this.x = 0; // Position of the paddle [pixels]
    this.v = 0; // Velocity of the paddle [pixels/s]
-   this.w = 96; // Width of the paddle [pixels]
+   this.w = 42*3; // Width of the paddle [pixels]
 
    // Paddle direction flag
    // -1: moving left, 0: not moving, 1: moving right
@@ -234,22 +236,49 @@ var BreakoutPaddle = function ( ) {
 
    // Draw the paddle
    this.draw = function ( ctxt, y ) {
+      var x0 = this.x - this.w / 2;
+      x0 = Math.floor ( x0 / 3 ) * 3;
+
       // Paddle begin
       ctxt.drawImage ( imgPaddle, 0, this.color * paddleHeight, 21, paddleHeight,
-                       this.x - this.w / 2, y, 21, paddleHeight );
+                       x0, y, 21, paddleHeight );
 
       // Paddle mid part
       for ( var ww = 21 ; ww < this.w - 21; ww += 3 )
          ctxt.drawImage ( imgPaddle, 21, this.color * paddleHeight, 3, paddleHeight,
-                          this.x - this.w / 2 + ww, y, 3, paddleHeight );
+                          x0 + ww, y, 3, paddleHeight );
 
       // Paddle end
       ctxt.drawImage ( imgPaddle, 51, this.color * paddleHeight, 21, paddleHeight,
-                       this.x + this.w / 2 - 21, y, 21, paddleHeight );
+                       x0 + this.w - 21, y, 21, paddleHeight );
    }
 
    // Update the paddle
    this.update = function ( t ) {
+      var a = paddleAccel * this.dir - paddleDamp * this.v;
+      this.x += this.v * t + 0.5 * a * t * t;
+      this.v += a * t;
+   }
+}
+
+// Breakout ball
+var BreakoutBall = function ( ) {
+   this.x = [ 0, 0 ]; // Ball position
+   this.v = [ 0, 0 ]; // Ball velocity
+
+   // To which player the ball is bound (if any)
+   // 0 = no player, 1 = player 1, 2 = player 2
+   this.bound = 0;
+
+   // Update the ball
+   this.update = function ( t ) {
+      for ( var i = 0; i < 2; ++i )
+         this.x[i] += this.v[i] * t;
+   }
+
+   // Draw the ball
+   this.draw = function ( ctxt ) {
+      ctxt.drawImage ( imgBall, this.x[0], this.x[1] );
    }
 }
 
@@ -272,7 +301,10 @@ var Breakout = function ( ) {
    this.setup = function ( ) {
       this.width = cnvs.width;
       this.height = cnvs.height;
+
       this.randomize();
+      this.spawnBall(1);
+      this.spawnBall(2);
    }
 
    // Generate random field
@@ -304,7 +336,6 @@ var Breakout = function ( ) {
 
          var color = Math.floor ( Math.random() * colorNumber );
          var level = Math.floor ( Math.random() * 5 );
-         if ( level == 4 ) color = 0;
 
          var b1 = new BreakoutBrick();
          b1.p[0] = col;
@@ -312,11 +343,13 @@ var Breakout = function ( ) {
          b1.color = color; b1.level = level;
          this.bricks.push ( b1 );
 
-         var b4 = new BreakoutBrick();
-         b4.p[0] = col;
-         b4.p[1] = (-row);
-         b4.color = color; b4.level = level;
-         this.bricks.push ( b4 );
+         if ( row != 0 ) {
+            var b4 = new BreakoutBrick();
+            b4.p[0] = col;
+            b4.p[1] = (-row);
+            b4.color = color; b4.level = level;
+            this.bricks.push ( b4 );
+         }
 
          if ( row % 2 != 0 || col != 0 ) {
             var b2 = new BreakoutBrick();
@@ -325,11 +358,13 @@ var Breakout = function ( ) {
             b2.color = color; b2.level = level;
             this.bricks.push ( b2 );
 
-            var b3 = new BreakoutBrick();
-            b3.p[0] = row % 2 == 0 ? -col : -1-col;
-            b3.p[1] = (-row);
-            b3.color = color; b3.level = level;
-            this.bricks.push ( b3 );
+            if ( row != 0 ) {
+               var b3 = new BreakoutBrick();
+               b3.p[0] = row % 2 == 0 ? -col : -1-col;
+               b3.p[1] = (-row);
+               b3.color = color; b3.level = level;
+               this.bricks.push ( b3 );
+            }
          }
       }
 
@@ -338,6 +373,7 @@ var Breakout = function ( ) {
          if ( this.bricks[i].p[1] % 2 == 0 ) this.bricks[i].p[0] -= brickWidth / 2;
 
          this.bricks[i].p[1] *= brickHeight;
+         this.bricks[i].p[1] -= brickHeight / 2;
       }
    }
 
@@ -348,12 +384,115 @@ var Breakout = function ( ) {
          this.bricks[i].draw ( ctxt );
 
       // Draw the paddles
-      this.paddles[0].draw ( ctxt, cnvs.height / 2 - brickHeight - paddleHeight - 3 );
-      this.paddles[1].draw ( ctxt, -cnvs.height / 2 + brickHeight + 3 );
+      this.paddles[0].draw ( ctxt, this.height / 2 - brickHeight - paddleHeight - 3 );
+      this.paddles[1].draw ( ctxt, -this.height / 2 + brickHeight + 3 );
+
+      // Draw the balls
+      for ( var i = 0; i < this.balls.length; ++i )
+         this.balls[i].draw ( ctxt );
    }
 
    // Breakout update
    this.update = function ( t ) {
+      // Update the paddles
+      for ( var i = 0; i < 2; ++i ) {
+         this.paddles[i].update ( t );
+
+         if ( Math.abs(this.paddles[i].x) > (this.width - this.paddles[i].w) / 2 ) {
+            this.paddles[i].x = Math.sign(this.paddles[i].x) * (this.width - this.paddles[i].w) / 2;
+            this.paddles[i].v *= -0.5;
+         }
+      }
+
+      // Update the balls
+      for ( var i = 0; i < this.balls.length; ++i ) {
+         if ( this.balls[i].bound > 0 ) {
+            this.balls[i].x[1] = this.balls[i].bound == 1 ? (this.height / 2 - brickHeight - paddleHeight - 3 - ballSize) : (- this.height / 2 + brickHeight + 3 + paddleHeight) ;
+            this.balls[i].v[0] = (this.paddles[this.balls[i].bound - 1].x - this.balls[i].x[0] - ballSize / 2) * 15;
+         }
+
+         this.balls[i].update ( t );
+      }
+
+      // Check collisions
+      this.collisions ();
+   }
+
+   // Collision checks and resolution
+   this.collisions = function () {
+      for ( var i = 0; i < this.balls.length; ++i ) {
+         var b = this.balls[i];
+
+         // Ball against wall
+         if ( b.x[0] + ballSize > this.width/2 ) {
+            b.x[0] = this.width/2 - ballSize;
+            b.v[0] *= -1;
+         }
+
+         if ( b.x[0] < -this.width/2 ) {
+            b.x[0] = -this.width/2;
+            b.v[0] *= -1;
+         }
+
+         // Ball against paddles
+         if ( b.x[1] < -this.height / 2 + brickHeight + 3 + paddleHeight &&
+              Math.abs ( b.x[0] + ballSize/2 - this.paddles[1].x ) < ( this.paddles[1].w + ballSize ) / 2 ) {
+            b.x[1] = -this.height / 2 + brickHeight + 3 + paddleHeight;
+            b.v[1] *= -1;
+         }
+
+         if ( b.x[1] > this.height / 2 - brickHeight - paddleHeight - 3 - ballSize &&
+              Math.abs ( b.x[0] + ballSize/2 - this.paddles[0].x ) < ( this.paddles[0].w + ballSize ) / 2 ) {
+            b.x[1] = this.height / 2 - brickHeight - paddleHeight - 3 - ballSize;
+            b.v[1] *= -1;
+         }
+
+         // Ball against bricks
+         for ( var j = 0; j < this.bricks.length; ++j ) {
+            var k = this.bricks[j];
+
+            if ( b.x[0] + ballSize > k.p[0] && b.x[0] < k.p[0] && Math.abs(k.p[1] + k.p[3]/2 - b.x[1] - ballSize/2) < (ballSize + k.p[3])/2 ) {
+               b.x[0] = k.p[0] - ballSize;
+               b.v[0] *= -1;
+            }
+
+            if ( b.x[0] < k.p[0] + k.p[2] && b.x[0] + ballSize > k.p[0] + k.p[2] && Math.abs(k.p[1] + k.p[3]/2 - b.x[1] - ballSize/2) < (ballSize + k.p[3])/2 ) {
+               b.x[0] = k.p[0] + k.p[2];
+               b.v[0] *= -1;
+            }
+
+            if ( b.x[1] + ballSize > k.p[1] && b.x[1] < k.p[1] && Math.abs(k.p[0] + k.p[2]/2 - b.x[0] - ballSize/2) < (ballSize + k.p[2])/2 ) {
+               b.x[1] = k.p[1] - ballSize;
+               b.v[1] *= -1;
+            }
+
+            if ( b.x[1] < k.p[1] + k.p[3] - 3 && b.x[1] + ballSize > k.p[1] + k.p[3] && Math.abs(k.p[0] + k.p[2]/2 - b.x[0] - ballSize/2) < (ballSize + k.p[2])/2 ) {
+               b.x[1] = k.p[1] + k.p[3];
+               b.v[1] *= -1;
+            }
+         }
+      }
+   }
+
+   // Spawn a ball for one of the two player
+   this.spawnBall = function ( player ) {
+      var ball = new BreakoutBall();
+      ball.bound = player;
+      this.balls.push(ball);
+   }
+
+   // Shoot!
+   this.shoot = function ( player ) {
+      for ( var i = 0; i < this.balls.length; ++i ) {
+         if ( this.balls[i].bound == player ) {
+            this.balls[i].bound = 0;
+            this.balls[i].v[0] = this.paddles[player-1].v;
+            if ( Math.abs(this.balls[i].v[0]) >= 0.9 * ballSpeed )
+               this.balls[i].v[0] = 0.9 * ballSpeed * Math.sign(this.balls[i].v[0]);
+
+            this.balls[i].v[1] = Math.sqrt ( ballSpeed*ballSpeed - this.balls[i].v[0]*this.balls[i].v[0] ) * ( player == 1 ? -1 : 1 );
+         }
+      }
    }
 }
 
@@ -383,7 +522,11 @@ var Game = function ( ) {
    }
 
    // Update game function
-   this.update = function ( t ) { }
+   this.update = function ( t ) {
+      if ( this.state == 1 ) {
+         this.breakout.update ( t );
+      }
+   }
 }
 
 // Flow handling ///////////////////////////////////////////////////////////////
@@ -440,11 +583,27 @@ var setup = function ( ) {
 
    // Keyboard callbacks
    document.onkeydown = function ( e ) {
+      if ( g.state == 1 ) { // Breakout controls
+         if ( e.key == "ArrowLeft" )
+            g.breakout.paddles[0].dir = -1;
+         if ( e.key == "ArrowRight" )
+            g.breakout.paddles[0].dir = 1;
+         if ( e.key == " " )
+            g.breakout.shoot(1);
+      }
+   }
+   document.onkeyup = function ( e ) {
+      if ( g.state == 1 ) { // Breakout controls
+         if ( e.key == "ArrowLeft" || e.key == "ArrowRight" )
+            g.breakout.paddles[0].dir = 0;
+      }
    }
 
    // Setup game
    g.setup();
 
+   lastUpdateTime = Date.now();
+   requestAnimationFrame ( update );
    requestAnimationFrame ( draw );
 }
 
@@ -458,4 +617,15 @@ var draw = function () {
    ctxt.save(); ctxt.translate ( cnvs.width/2, cnvs.height/2 );
    g.draw ( ctxt );
    ctxt.restore();
+}
+
+// Update function
+var lastUpdateTime = 0;
+var update = function () {
+   requestAnimationFrame ( update );
+
+   var deltat = Date.now() - lastUpdateTime;
+   g.update ( deltat / 1000 );
+
+   lastUpdateTime = Date.now();
 }
