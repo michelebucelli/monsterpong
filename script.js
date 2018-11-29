@@ -109,33 +109,33 @@ var MonsterPart = function ( ) {
 // Parts archive
 var partsExtra = [ // Extras
    { id: 0, stats: [1,0,1] }, // Big horns
-   { id: 1, stats: [1,1,1] }, // Small horns
-   { id: 2, stats: [0,2,2] }  // Flurry hair
+   { id: 1, stats: [1,0,1] }, // Small horns
+   { id: 2, stats: [0,1,2] }  // Flurry hair
 ];
 var partsEyes = [ // Eyes
    { id: 0, stats: [1,0,2] }, // Big angry eye
-   { id: 1, stats: [0,1,2] }, // Three dark eyes
-   { id: 2, stats: [0,1,3] }, // Green scared eyes
-   { id: 3, stats: [1,1,1] }, // Three bright eyes
-   { id: 4, stats: [0,2,2] }  // Big cute eye
+   { id: 1, stats: [0,0,2] }, // Three dark eyes
+   { id: 2, stats: [0,0,3] }, // Green scared eyes
+   { id: 3, stats: [1,0,1] }, // Three bright eyes
+   { id: 4, stats: [0,1,2] }  // Big cute eye
 ];
 var partsMouths = [ // Mouths
-   { id: 0, stats: [0,2,2] }, // Bear mouth
-   { id: 1, stats: [0,1,2] }, // Straight mouth
-   { id: 2, stats: [0,2,1] }, // Round hole mouth
+   { id: 0, stats: [0,1,2] }, // Bear mouth
+   { id: 1, stats: [0,0,2] }, // Straight mouth
+   { id: 2, stats: [0,1,1] }, // Round hole mouth
    { id: 3, stats: [1,0,1] }, // Open mouth with teeth
-   { id: 4, stats: [1,1,0] }  // Closed mouth with teeth
+   { id: 4, stats: [1,0,0] }  // Closed mouth with teeth
 ];
 var partsNoses = [ // Noses
-   { id: 0, stats: [0,1,2] }, // Square nose
+   { id: 0, stats: [0,0,2] }, // Square nose
    { id: 1, stats: [0,0,4] }, // Round nose
-   { id: 2, stats: [1,2,0] }, // Monkey nose
-   { id: 3, stats: [0,1,2] }  // Weird nose
+   { id: 2, stats: [1,1,0] }, // Monkey nose
+   { id: 3, stats: [0,0,2] }  // Weird nose
 ];
 var partsEars = [ // Ears
-   { id: 0, stats: [0,2,2] },
-   { id: 1, stats: [0,1,2] },
-   { id: 2, stats: [1,2,0] }
+   { id: 0, stats: [0,1,2] },
+   { id: 1, stats: [0,0,2] },
+   { id: 2, stats: [1,1,0] }
 ];
 
 // Monster class
@@ -457,8 +457,18 @@ var Breakout = function ( ) {
       // Update the balls
       for ( var i = 0; i < this.balls.length; ++i ) {
          if ( this.balls[i].bound > 0 ) {
+            // Count the balls bound to the player
+            var howManyBound = 0;
+            var howManyBoundBefore = 0;
+            for ( var j = 0; j < this.balls.length; ++j ) {
+               howManyBound += (this.balls[j].bound == this.balls[i].bound);
+               howManyBoundBefore += (j < i && this.balls[j].bound == this.balls[i].bound);
+            }
+
+            var targetX = this.paddles[this.balls[i].bound - 1].x - howManyBound * ballSize / 2 + howManyBoundBefore * ballSize + ballSize / 2;
+
             this.balls[i].x[1] = this.balls[i].bound == 1 ? (this.height / 2 - brickHeight - paddleHeight - 3 - ballSize) : (- this.height / 2 + brickHeight + 3 + paddleHeight) ;
-            this.balls[i].v[0] = (this.paddles[this.balls[i].bound - 1].x - this.balls[i].x[0] - ballSize / 2) * 15;
+            this.balls[i].v[0] = (targetX - this.balls[i].x[0] - ballSize / 2) * 15;
          }
 
          this.balls[i].update ( t );
