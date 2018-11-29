@@ -320,7 +320,7 @@ var Breakout = function ( ) {
       for ( var j = 0; j < Math.max(atk2,1); ++j )
          this.spawnBall(2);
 
-      // this.setupDefenses();
+      this.setupDefenses();
 
       this.paddles[0].color = p1.color;
       this.paddles[1].color = p2.color;
@@ -400,13 +400,22 @@ var Breakout = function ( ) {
    this.setupDefenses = function ( ) {
       var cols = cnvs.width / brickWidth;
 
-      // P1 defenses
-      for ( var i = 0; i < cols; ++i ) {
-         var b = new BreakoutBrick();
-         b.color = this.p1.color;
-         b.level = Math.min ( this.p1.stat(1), 3 );
-         b.p[0] = i * brickWidth;
-         this.bricks.push ( b );
+      for ( var i = 0; i < 2*cols; ++i ) {
+         // P1 defenses
+         var b1 = new BreakoutBrick();
+         b1.color = this.p1.color;
+         b1.level = Math.min ( this.p1.stat(1), 3 );
+         b1.p[0] = i * brickWidth - this.width;
+         b1.p[1] = this.height / 2 - brickHeight;
+         this.bricks.push ( b1 );
+
+         // P2 defenses
+         var b2 = new BreakoutBrick();
+         b2.color = this.p2.color;
+         b2.level = Math.min ( this.p2.stat(1), 3 );
+         b2.p[0] = i * brickWidth - this.width;
+         b2.p[1] = -this.height / 2;
+         this.bricks.push ( b2 );
       }
    }
 
