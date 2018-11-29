@@ -98,6 +98,46 @@ var names = new RandName ( [ [ "Green ", "Blue ", "Red " ], // Color
                              [ "i", "ar", "eb" ], // Ears
                              [ "bull", "hog", "ler" ] ] ); // Extra
 
+// Monster part class
+var MonsterPart = function ( ) {
+   this.id = 0; // Part index (matches image)
+
+   // Part stats: [atk, def, hp]
+   this.stats = [0,0,0];
+}
+
+// Parts archive
+var partsExtra = [ // Extras
+   { id: 0, stats: [1,0,1] }, // Big horns
+   { id: 1, stats: [1,1,1] }, // Small horns
+   { id: 2, stats: [0,2,2] }  // Flurry hair
+];
+var partsEyes = [ // Eyes
+   { id: 0, stats: [1,0,2] }, // Big angry eye
+   { id: 1, stats: [0,1,2] }, // Three dark eyes
+   { id: 2, stats: [0,1,3] }, // Green scared eyes
+   { id: 3, stats: [1,1,1] }, // Three bright eyes
+   { id: 4, stats: [0,2,2] }  // Big cute eye
+];
+var partsMouths = [ // Mouths
+   { id: 0, stats: [0,2,2] }, // Bear mouth
+   { id: 1, stats: [0,1,2] }, // Straight mouth
+   { id: 2, stats: [0,2,1] }, // Round hole mouth
+   { id: 3, stats: [1,0,1] }, // Open mouth with teeth
+   { id: 4, stats: [1,1,0] }  // Closed mouth with teeth
+];
+var partsNoses = [ // Noses
+   { id: 0, stats: [0,1,2] }, // Square nose
+   { id: 1, stats: [0,0,4] }, // Round nose
+   { id: 2, stats: [1,2,0] }, // Monkey nose
+   { id: 3, stats: [0,1,2] }  // Weird nose
+];
+var partsEars = [ // Ears
+   { id: 0, stats: [0,2,2] },
+   { id: 1, stats: [0,1,2] },
+   { id: 2, stats: [1,2,0] }
+];
+
 // Monster class
 var Monster = function ( ) {
    // Misc info ////////////////////////////////////////////////////////////////
@@ -106,99 +146,54 @@ var Monster = function ( ) {
    // Graphics /////////////////////////////////////////////////////////////////
    this.color = 0;
 
-   // Each of the parts is determined by an index
-   this.eyes = 0;
-   this.nose = 0;
-   this.mouth = 0;
-   this.ears = 0;
-   this.extra = 0;
+   // Parts composing the monster
+   // [ extra, eyes, mouths, noses, ears ]
+   this.parts = [ partsExtra[0], partsEyes[0], partsMouths[0], partsNoses[0], partsEars[0] ];
 
    // Draws the monster
    //    ctxt: context to draw on
    //    x,y: coordinates for the upper-left corner of the frame
    this.draw = function ( ctxt, x, y ) {
       ctxt.drawImage ( imgBody, this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Body
-      ctxt.drawImage ( imgExtra[this.extra], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Extra
-      ctxt.drawImage ( imgEyes[this.eyes], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Eyes
-      ctxt.drawImage ( imgMouth[this.mouth], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Mouth
-      ctxt.drawImage ( imgNose[this.nose], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Nose
-      ctxt.drawImage ( imgEars[this.ears], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Ears
+      ctxt.drawImage ( imgExtra[this.parts[0].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Extra
+      ctxt.drawImage ( imgEyes[this.parts[1].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Eyes
+      ctxt.drawImage ( imgMouth[this.parts[2].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Mouth
+      ctxt.drawImage ( imgNose[this.parts[3].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Nose
+      ctxt.drawImage ( imgEars[this.parts[4].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Ears
    }
 
    // Statistics ///////////////////////////////////////////////////////////////
-   this.maxHP = 10;
-   this.hp = 10;
+   this.hp = 0; // Current health value
 
-   this.atk = 10;
-   this.def = 10;
-   this.reg = 0;
+   // Compute value of stat
+   this.stat = function ( idx ) {
+      var result = 0;
+      for ( var i = 0; i < this.parts.length; ++i )
+         result += this.parts[i].stats[idx];
+      return result;
+   }
 
    // Miscellaneous ////////////////////////////////////////////////////////////
 
    // Randomly assigns values to the monster parts
    this.randomizeParts = function ( ) {
       this.color = Math.floor ( Math.random() * colorNumber );
-      this.eyes = Math.floor ( Math.random() * eyesNumber );
-      this.nose = Math.floor ( Math.random() * nosesNumber );
-      this.mouth = Math.floor ( Math.random() * mouthsNumber );
-      this.ears = Math.floor ( Math.random() * earsNumber );
-      this.extra = Math.floor ( Math.random() * extraNumber );
-      this.name = names.get ( [ this.color, this.eyes, this.nose, this.mouth, this.ears, this.extra ] );
-   }
+      this.parts = [ partsExtra [ Math.floor ( Math.random() * extraNumber ) ],
+                     partsEyes [ Math.floor ( Math.random() * eyesNumber ) ],
+                     partsMouths [ Math.floor ( Math.random() * mouthsNumber ) ],
+                     partsNoses [ Math.floor ( Math.random() * nosesNumber ) ],
+                     partsEars [ Math.floor ( Math.random() * earsNumber ) ],
+                  ];
 
-   // Randomly assigns values to the stats
-   this.randomizeStats = function ( base, sd ) {
-      this.maxHP = this.atk = this.def = -1;
-      while ( this.maxHP <= 0 ) this.maxHP = Math.round ( randn ( base, sd ) );
-      while ( this.atk <= 0 ) this.atk = Math.round ( randn ( base, sd ) );
-      while ( this.def <= 0 ) this.def = Math.round ( randn ( base, sd ) );
-      this.reg = Math.floor ( Math.exp( randn ( 0, sd/50 ) ) );
+      this.name = names.get ( [ this.color, this.parts[0].id, this.parts[1].id, this.parts[2].id, this.parts[3].id, this.parts[4].id ] );
 
-      this.hp = this.maxHP;
+      this.hp = this.stat ( 2 );
    }
 
    // Monster info text
    this.info = function ( ) {
-      return this.name + "\n\nhp: " + this.hp + "/" + this.maxHP + "\natk: " + this.atk + "\ndef: " + this.def + "\nreg: " + this.reg;
+      return this.name;
    }
-}
-
-// Fight between two monsters
-// Returns 0 if nobody dies, 1 if A dies (even if B dies), 2 if B dies (but A doesn't)
-var fight = function ( a, b ) {
-   var dmgA = b.atk - a.def;
-   if ( dmgA <= 0 ) dmgA = 1;
-
-   var dmgB = a.atk - b.def;
-   if ( dmgB <= 0 ) dmgB = 1;
-
-   a.hp -= dmgA;
-   b.hp -= dmgB;
-
-   if ( a.hp <= 0 ) return 1;
-   else if ( b.hp <= 0 ) return 2;
-   else return 0;
-}
-
-// Hybridates two monsters
-// Monster a becomes a new monster with mixed parts and statistics
-var hybridate = function ( a, b, wa, wb ) {
-   // Get one new part at random
-   var whichPart = Math.floor ( Math.random() * 6 );
-   if ( whichPart == 0 ) a.color = b.color;
-   if ( whichPart == 1 ) a.eyes = b.eyes;
-   if ( whichPart == 2 ) a.nose = b.nose;
-   if ( whichPart == 3 ) a.mouth = b.mouth;
-   if ( whichPart == 4 ) a.ears = b.ears;
-   if ( whichPart == 5 ) a.extra = b.extra;
-
-   a.atk = Math.ceil((wa*a.atk + wb*b.atk) / (wa+wb));
-   a.def = Math.ceil((wa*a.def + wb*b.def) / (wa+wb));
-   a.reg = Math.ceil((wa*a.reg + wb*b.reg) / (wa+wb));
-
-   var oldHP = a.hp / a.maxHP;
-   a.maxHP = Math.ceil((wa*a.maxHP + wb*b.maxHP) / (wa+wb));
-   a.hp = Math.ceil ( oldHP * a.maxHP );
 }
 
 // Breakout brick class
@@ -303,14 +298,32 @@ var Breakout = function ( ) {
    // Game time
    this.t = 0;
 
+   // Players
+   this.p1 = 0;
+   this.p2 = 0;
+
    // Breakout setup
-   this.setup = function ( ) {
+   this.setup = function ( p1, p2 ) {
+      this.p1 = p1;
+      this.p2 = p2;
+
       this.width = cnvs.width;
       this.height = cnvs.height;
 
       this.randomize();
-      this.spawnBall(1);
-      this.spawnBall(2);
+
+      var atk1 = p1.stat(0);
+      for ( var i = 0; i < Math.max(atk1,1); ++i )
+         this.spawnBall(1);
+
+      var atk2 = p2.stat(0);
+      for ( var j = 0; j < Math.max(atk2,1); ++j )
+         this.spawnBall(2);
+
+      // this.setupDefenses();
+
+      this.paddles[0].color = p1.color;
+      this.paddles[1].color = p2.color;
    }
 
    // Generate random field
@@ -380,6 +393,20 @@ var Breakout = function ( ) {
 
          this.bricks[i].p[1] *= brickHeight;
          this.bricks[i].p[1] -= brickHeight / 2;
+      }
+   }
+
+   // Setup defenses
+   this.setupDefenses = function ( ) {
+      var cols = cnvs.width / brickWidth;
+
+      // P1 defenses
+      for ( var i = 0; i < cols; ++i ) {
+         var b = new BreakoutBrick();
+         b.color = this.p1.color;
+         b.level = Math.min ( this.p1.stat(1), 3 );
+         b.p[0] = i * brickWidth;
+         this.bricks.push ( b );
       }
    }
 
@@ -553,8 +580,12 @@ var Breakout = function ( ) {
          if ( this.balls[i].bound == player ) {
             this.balls[i].bound = 0;
             this.balls[i].v[0] = this.paddles[player-1].v;
-            if ( Math.abs(this.balls[i].v[0]) >= 0.9 * ballSpeed )
-               this.balls[i].v[0] = 0.9 * ballSpeed * Math.sign(this.balls[i].v[0]);
+
+            // Random variation to the ball speed
+            if ( Math.abs(this.balls[i].v[0]) >= 0.75 * ballSpeed )
+               this.balls[i].v[0] = 0.75 * ballSpeed * Math.sign(this.balls[i].v[0]);
+
+            this.balls[i].v[0] += (Math.random() - 0.5) * 100;
 
             this.balls[i].v[1] = Math.sqrt ( ballSpeed*ballSpeed - this.balls[i].v[0]*this.balls[i].v[0] ) * ( player == 1 ? -1 : 1 );
          }
@@ -613,17 +644,40 @@ var Game = function ( ) {
    // Breakout game object
    this.breakout = new Breakout();
 
+   // Player object and current opponent
+   this.player = 0;
+   this.enemy = 0;
+
    // Game setup function
    this.setup = function ( ) {
-      this.breakout.setup();
+      this.player = new Monster();
+      this.player.randomizeParts();
+
+      this.randomEnemy();
+
+      this.breakout.setup( this.player, this.enemy );
       this.state = 1;
    }
 
+   // Creates a new enemy at random
+   this.randomEnemy = function ( ) {
+      this.enemy = new Monster();
+      this.enemy.randomizeParts();
+   }
+
    // Draw game function
-   this.draw = function ( ctxt ) {
+   this.draw = function ( ctxt, p1Ctxt, p2Ctxt ) {
       if ( this.state == 1 ) {
          this.breakout.draw ( ctxt );
       }
+
+      var s = this.player.name;
+      p1Ctxt.text ( p1Cnvs.width - font.textWidth(s) - 12, p1Cnvs.height - 6 - font.baselineSkip, s, 0 );
+      this.player.draw ( p1Ctxt, p1Cnvs.width - frameWidth - 12, p1Cnvs.height - frameHeight - font.baselineSkip - 6 );
+
+      s = this.enemy.name;
+      p2Ctxt.text ( 12, 12, s, 0 );
+      this.enemy.draw ( p2Ctxt, 12, font.baselineSkip + 6 );
    }
 
    // Update game function
@@ -639,14 +693,24 @@ var Game = function ( ) {
 var cnvs = 0; // Canvas reference
 var ctxt = 0; // 2D context of cnvs
 
+var p1Cnvs = 0; // Player 1 canvas reference
+var p1Ctxt = 0; // 2D context of p1Cnvs
+
+var p2Cnvs = 0; // Player 2 canvas reference
+var p2Ctxt = 0; // 2D context of p1Cnvs
+
 var g = new Game();
 
 // Setup function
 // Called on page load; sets up DOM variables and callbacks
 var setup = function ( ) {
    // Retrieve canvas and canvas context
-   cnvs = document.getElementById( "canvas" );
+   cnvs = document.getElementById( "mainCanvas" );
    ctxt = cnvs.getContext ( "2d" );
+   p1Cnvs = document.getElementById( "p1Canvas" );
+   p1Ctxt = p1Cnvs.getContext ( "2d" );
+   p2Cnvs = document.getElementById( "p2Canvas" );
+   p2Ctxt = p2Cnvs.getContext ( "2d" );
 
    // Preload images
    loadImages();
@@ -674,13 +738,13 @@ var setup = function ( ) {
    font.finalize ();
 
    // Add functions to context
-   ctxt.text = function ( x, y, text, col ) { font.renderText ( this, x, y, text, col ); }
-   ctxt.hline = function ( x1, x2, y ) {
+   p1Ctxt.text = p2Ctxt.text = ctxt.text = function ( x, y, text, col ) { font.renderText ( this, x, y, text, col ); }
+   p1Ctxt.hline = p2Ctxt.hline = ctxt.hline = function ( x1, x2, y ) {
       var a = Math.round ( Math.min(x1,x2)/3 ) * 3;
       var b = Math.round ( Math.max(x1,x2)/3 ) * 3;
       this.fillRect ( a, Math.round ( y/3 ) * 3, b-a, 3 );
    }
-   ctxt.vline = function ( x, y1, y2 ) {
+   p1Ctxt.vline = p2Ctxt.vline = ctxt.vline = function ( x, y1, y2 ) {
       var a = Math.round ( Math.min(y1,y2)/3 ) * 3;
       var b = Math.round ( Math.max(y1,y2)/3 ) * 3;
       this.fillRect ( Math.round ( x/3 ) * 3, a, 3, b-a );
@@ -708,7 +772,7 @@ var draw = function () {
    ctxt.fillRect ( 0, 0, cnvs.width, cnvs.height );
 
    ctxt.save(); ctxt.translate ( cnvs.width/2, cnvs.height/2 );
-   g.draw ( ctxt );
+   g.draw ( ctxt, p1Ctxt, p2Ctxt );
    ctxt.restore();
 }
 

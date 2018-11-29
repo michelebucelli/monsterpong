@@ -78,4 +78,26 @@ var BitFont = function ( src, alphabet, charW, charH ) {
          else x += this.renderChar ( ctxt, x, y, text.charAt(i), color );
       }
    }
+
+   // Compute width of char
+   this.charWidth = function ( char ) {
+      if ( !this.finalized ) // Finalize if necessary
+         this.finalize();
+
+      if ( char == " " )
+         return this.charWBase;
+
+      var chidx = this.ch(char);
+      if ( chidx > 0 )
+         return this.charBBoxes[chidx][2];
+      else return this.charWBase;
+   }
+
+   // Compute width of (a single line of) text
+   this.textWidth = function ( text ) {
+      var result = 0;
+      for ( var i = 0; i < text.length; ++i )
+         result += this.charWidth ( text.charAt(i) );
+      return result;
+   }
 }
