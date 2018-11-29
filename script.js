@@ -87,8 +87,8 @@ var hpBar = function ( ctxt, x, y, w, fill ) {
 
 // Game logic //////////////////////////////////////////////////////////////////
 
-const paddleAccel = 5000; // Paddle acceleration [pixels/s^2]
-const paddleDamp = 10; // Paddle damping factor [1/s]
+const paddleAccel = 4000; // Paddle acceleration [pixels/s^2]
+const paddleDamp = 3; // Paddle damping factor [1/s]
 const ballSpeed = 300; // Ball speed [pixels/second]
 
 var names = new RandName ( [ [ "Green ", "Blue ", "Red " ], // Color
@@ -214,6 +214,9 @@ var BreakoutBrick = function ( ) {
    // Brick dimensions [pixels], format [x,y,w,h]
    this.p = [ 0, 0, brickWidth, brickHeight ];
 
+   // Brick was hit flag
+   this.hit = 0;
+
    // Draw the brick
    this.draw = function ( ctxt ) {
       ctxt.drawImage ( imgBricks, this.color * this.p[2], this.level * this.p[3], this.p[2], this.p[3],
@@ -296,6 +299,9 @@ var Breakout = function ( ) {
    // Field size
    this.width = 747;
    this.height = 576;
+
+   // Game time
+   this.t = 0;
 
    // Breakout setup
    this.setup = function ( ) {
@@ -394,13 +400,21 @@ var Breakout = function ( ) {
 
    // Breakout update
    this.update = function ( t ) {
+      // Moves enemy with AI, player according to keys
+      this.ai();
+      var l = key("left"), r = key("right"), s = key("shoot");
+      if ( l && !r ) this.paddles[0].dir = -1;
+      if ( r && !l ) this.paddles[0].dir =  1;
+      if ( (!l && !r) || (r && l) ) this.paddles[0].dir = 0;
+      if ( s ) this.shoot ( 1 );
+
       // Update the paddles
       for ( var i = 0; i < 2; ++i ) {
          this.paddles[i].update ( t );
 
          if ( Math.abs(this.paddles[i].x) > (this.width - this.paddles[i].w) / 2 ) {
             this.paddles[i].x = Math.sign(this.paddles[i].x) * (this.width - this.paddles[i].w) / 2;
-            this.paddles[i].v *= -0.5;
+            this.paddles[i].v *= -0.1;
          }
       }
 
@@ -416,6 +430,20 @@ var Breakout = function ( ) {
 
       // Check collisions
       this.collisions ();
+
+      // Checks for hit bricks
+      for ( var i = 0; i < this.bricks.length; ++i ) {
+         if ( this.bricks[i].hit && this.bricks[i].level < 4 ) {
+            this.bricks[i].level--;
+            this.bricks[i].hit = 0;
+            if ( this.bricks[i].level < 0 ) {
+               this.bricks.splice ( i, 1 );
+               i--;
+            }
+         }
+      }
+
+      this.t += t;
    }
 
    // Collision checks and resolution
@@ -423,51 +451,89 @@ var Breakout = function ( ) {
       for ( var i = 0; i < this.balls.length; ++i ) {
          var b = this.balls[i];
 
-         // Ball against wall
+         // Ball against right wall
          if ( b.x[0] + ballSize > this.width/2 ) {
             b.x[0] = this.width/2 - ballSize;
             b.v[0] *= -1;
          }
 
+         // Ball against left wall
          if ( b.x[0] < -this.width/2 ) {
             b.x[0] = -this.width/2;
             b.v[0] *= -1;
          }
 
-         // Ball against paddles
-         if ( b.x[1] < -this.height / 2 + brickHeight + 3 + paddleHeight &&
-              Math.abs ( b.x[0] + ballSize/2 - this.paddles[1].x ) < ( this.paddles[1].w + ballSize ) / 2 ) {
-            b.x[1] = -this.height / 2 + brickHeight + 3 + paddleHeight;
-            b.v[1] *= -1;
+         // Ball out, player 2
+         if ( b.x[1] + ballSize < -this.height / 2 ) {
+            // ... player 2 takes damage
+
+            this.balls.splice ( i, 1 ); // Remove the ball
+            console.log ( "OUT, ball " + i + " lost by player 2" );
+            continue;
          }
 
-         if ( b.x[1] > this.height / 2 - brickHeight - paddleHeight - 3 - ballSize &&
-              Math.abs ( b.x[0] + ballSize/2 - this.paddles[0].x ) < ( this.paddles[0].w + ballSize ) / 2 ) {
-            b.x[1] = this.height / 2 - brickHeight - paddleHeight - 3 - ballSize;
-            b.v[1] *= -1;
+         // Ball out, player 1
+         if ( b.x[1] > this.height / 2 ) {
+            // ... player 1 takes damage
+
+            this.balls.splice ( i, 1 ); // Remove the ball
+            console.log ( "OUT, ball " + i + " lost by player 1" );
+            continue;
+         }
+
+         // Ball against paddles: paddle player 1
+         if ( b.v[1] > 0 && b.x[1] + ballSize > this.height / 2 - brickHeight - paddleHeight - 3
+            && b.x[1] < this.height / 2 - brickHeight - 3
+            && Math.abs ( b.x[0] + ballSize/2 - this.paddles[0].x ) < ( this.paddles[0].w + ballSize ) / 2 ) {
+
+            b.v[0] = 0.5 * ( b.v[0] + this.paddles[0].v );
+            if ( Math.abs(b.v[0]) >= 0.9 * ballSpeed )
+               b.v[0] = 0.9 * ballSpeed * Math.sign(b.v[0]);
+
+            b.v[1] = Math.sqrt ( ballSpeed*ballSpeed - b.v[0]*b.v[0] ) * -1;
+         }
+
+         // Ball against paddles: paddle player 2
+         if ( b.v[1] < 0 && b.x[1] < -this.height / 2 + brickHeight + 3 + paddleHeight
+            && b.x[1] > -this.height / 2 + brickHeight + 3
+            && Math.abs ( b.x[0] + ballSize/2 - this.paddles[1].x ) < ( this.paddles[1].w + ballSize ) / 2 ) {
+
+            b.v[0] = 0.5 * ( b.v[0] + this.paddles[1].v );
+            if ( Math.abs(b.v[0]) >= 0.9 * ballSpeed )
+               b.v[0] = 0.9 * ballSpeed * Math.sign(b.v[0]);
+
+            b.v[1] = Math.sqrt ( ballSpeed*ballSpeed - b.v[0]*b.v[0] );
          }
 
          // Ball against bricks
          for ( var j = 0; j < this.bricks.length; ++j ) {
             var k = this.bricks[j];
 
-            if ( b.x[0] + ballSize > k.p[0] && b.x[0] < k.p[0] && Math.abs(k.p[1] + k.p[3]/2 - b.x[1] - ballSize/2) < (ballSize + k.p[3])/2 ) {
+            // Brick left side
+            if ( b.v[0] > 0 && b.x[0] + ballSize > k.p[0] && b.x[0] < k.p[0] && Math.abs(k.p[1] + k.p[3]/2 - b.x[1] - ballSize/2) < (ballSize + k.p[3])/2 ) {
                b.x[0] = k.p[0] - ballSize;
+               k.hit = 1;
                b.v[0] *= -1;
             }
 
-            if ( b.x[0] < k.p[0] + k.p[2] && b.x[0] + ballSize > k.p[0] + k.p[2] && Math.abs(k.p[1] + k.p[3]/2 - b.x[1] - ballSize/2) < (ballSize + k.p[3])/2 ) {
+            // Brick right side
+            if ( b.v[0] < 0 && b.x[0] < k.p[0] + k.p[2] && b.x[0] + ballSize > k.p[0] + k.p[2] && Math.abs(k.p[1] + k.p[3]/2 - b.x[1] - ballSize/2) < (ballSize + k.p[3])/2 ) {
                b.x[0] = k.p[0] + k.p[2];
+               k.hit = 1;
                b.v[0] *= -1;
             }
 
-            if ( b.x[1] + ballSize > k.p[1] && b.x[1] < k.p[1] && Math.abs(k.p[0] + k.p[2]/2 - b.x[0] - ballSize/2) < (ballSize + k.p[2])/2 ) {
+            // Brick top side
+            if ( b.v[1] > 0 && b.x[1] + ballSize > k.p[1] && b.x[1] < k.p[1] && Math.abs(k.p[0] + k.p[2]/2 - b.x[0] - ballSize/2) < (ballSize + k.p[2])/2 ) {
                b.x[1] = k.p[1] - ballSize;
+               k.hit = 1;
                b.v[1] *= -1;
             }
 
-            if ( b.x[1] < k.p[1] + k.p[3] - 3 && b.x[1] + ballSize > k.p[1] + k.p[3] && Math.abs(k.p[0] + k.p[2]/2 - b.x[0] - ballSize/2) < (ballSize + k.p[2])/2 ) {
+            // Brick bottom side
+            if ( b.v[1] < 0 && b.x[1] < k.p[1] + k.p[3] - 3 && b.x[1] + ballSize > k.p[1] + k.p[3] && Math.abs(k.p[0] + k.p[2]/2 - b.x[0] - ballSize/2) < (ballSize + k.p[2])/2 ) {
                b.x[1] = k.p[1] + k.p[3];
+               k.hit = 1;
                b.v[1] *= -1;
             }
          }
@@ -493,6 +559,45 @@ var Breakout = function ( ) {
             this.balls[i].v[1] = Math.sqrt ( ballSpeed*ballSpeed - this.balls[i].v[0]*this.balls[i].v[0] ) * ( player == 1 ? -1 : 1 );
          }
       }
+   }
+
+   // AI
+   // Controls player 2
+   this.ai = function ( ) {
+      // No balls = nothing to be done
+      if ( this.balls.length <= 0 ) return;
+
+      var nearestIncomingBall = this.balls[0];
+      var nearestBall = this.balls[0];
+
+      // Checks if there are balls attached and finds the nearest incoming ball
+      for ( var i = 0; i < this.balls.length; ++i ) {
+         if ( this.balls[i].v[1] < 0 && this.balls[i].x[1] < nearestIncomingBall.x[1] )
+            nearestIncomingBall = this.balls[i];
+         if ( this.balls[i].x[1] < nearestBall.x[1] )
+            nearestBall = this.balls[i];
+
+         if ( this.balls[i].bound == 2 && this.t >= 2 )
+            this.shoot ( 2 );
+      }
+
+      // Moves according to nearest incoming ball
+      // If no ball is incoming, moves according to the nearest
+      var targetBall = (nearestIncomingBall.v[1] < 0 ? nearestIncomingBall : nearestBall);
+      var delta = targetBall.x[0] + ballSize / 2 - this.paddles[1].x;
+
+      if ( Math.abs(delta) > this.paddles[1].w / 2 )
+         this.paddles[1].dir = Math.sign ( delta );
+
+      // If the target ball is very close and incoming, move a little at random to give effect
+      else if ( targetBall.x[1] - (-this.height/2 + brickHeight + 3 + paddleHeight) < 30 && targetBall.v[1] < 0 ) {
+         if ( this.paddles[1].dir == 0 ) {
+            console.log ( "EFFECT!" );
+            this.paddles[1].dir = ( Math.random() > 0.5 ? -1 : 1 );
+         }
+      }
+
+      else this.paddles[1].dir = 0;
    }
 }
 
@@ -581,23 +686,11 @@ var setup = function ( ) {
       this.fillRect ( Math.round ( x/3 ) * 3, a, 3, b-a );
    }
 
-   // Keyboard callbacks
-   document.onkeydown = function ( e ) {
-      if ( g.state == 1 ) { // Breakout controls
-         if ( e.key == "ArrowLeft" )
-            g.breakout.paddles[0].dir = -1;
-         if ( e.key == "ArrowRight" )
-            g.breakout.paddles[0].dir = 1;
-         if ( e.key == " " )
-            g.breakout.shoot(1);
-      }
-   }
-   document.onkeyup = function ( e ) {
-      if ( g.state == 1 ) { // Breakout controls
-         if ( e.key == "ArrowLeft" || e.key == "ArrowRight" )
-            g.breakout.paddles[0].dir = 0;
-      }
-   }
+   // Register keys
+   registerKey ( "left", "ArrowLeft" );
+   registerKey ( "right", "ArrowRight" );
+   registerKey ( "shoot", " " );
+   setupKeys();
 
    // Setup game
    g.setup();
