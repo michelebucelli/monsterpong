@@ -45,6 +45,7 @@ var imgHPbar = 0;
 var imgBricks = 0;
 var imgPaddle = 0;
 var imgBall = 0;
+var imgHeart = 0;
 
 // Loads an array of images from a folder
 var loadImagesArray = function ( folder, n ) {
@@ -63,7 +64,7 @@ var loadImages = function ( ) {
    imgFrame = new Image(); imgFrame.src = "./gfx/frame.png";
    imgFrameSelected = new Image(); imgFrameSelected.src = "./gfx/frame_selected.png";
    imgBody = new Image(); imgBody.src = "./gfx/body.png";
-   imgHPbar = new Image(); imgHPbar.src = "./gfx/healthbar.png";
+   imgHeart = new Image(); imgHeart.src = "./gfx/heart.png";
    imgBricks = new Image(); imgBricks.src = "./gfx/bricks.png";
    imgPaddle = new Image(); imgPaddle.src = "./gfx/paddles.png";
    imgBall = new Image(); imgBall.src = "./gfx/ball.png";
@@ -73,16 +74,6 @@ var loadImages = function ( ) {
    imgMouth = loadImagesArray ( "./gfx/mouths", mouthsNumber );
    imgEars = loadImagesArray ( "./gfx/ears", earsNumber );
    imgExtra = loadImagesArray ( "./gfx/extra", extraNumber );
-}
-
-// Draw health bar
-var hpBar = function ( ctxt, x, y, w, fill ) {
-   if ( fill <= 0 ) return;
-
-   ctxt.drawImage ( imgHPbar, 0, 0, 3, 9, x, y, 3, 9 ); // Begin
-   for ( var i = 3; i < w * fill - 3; i += 3 ) // Middle part
-      ctxt.drawImage ( imgHPbar, 3, 0, 3, 9, x + i, y, 3, 9 );
-   ctxt.drawImage ( imgHPbar, 15, 0, 3, 9, x + Math.floor(w*fill/3-1)*3, y, 3, 9 ); // End
 }
 
 // Game logic //////////////////////////////////////////////////////////////////
@@ -108,33 +99,33 @@ var MonsterPart = function ( ) {
 
 // Parts archive
 var partsExtra = [ // Extras
-   { id: 0, stats: [1,0,1] }, // Big horns
+   { id: 0, stats: [1,1,0] }, // Big horns
    { id: 1, stats: [1,0,1] }, // Small horns
-   { id: 2, stats: [0,1,2] }  // Flurry hair
+   { id: 2, stats: [0,1,1] }  // Flurry hair
 ];
 var partsEyes = [ // Eyes
-   { id: 0, stats: [1,0,2] }, // Big angry eye
-   { id: 1, stats: [0,0,2] }, // Three dark eyes
-   { id: 2, stats: [0,0,3] }, // Green scared eyes
+   { id: 0, stats: [1,0,1] }, // Big angry eye
+   { id: 1, stats: [0,0,1] }, // Three dark eyes
+   { id: 2, stats: [0,0,1] }, // Green scared eyes
    { id: 3, stats: [1,0,1] }, // Three bright eyes
-   { id: 4, stats: [0,1,2] }  // Big cute eye
+   { id: 4, stats: [0,1,1] }  // Big cute eye
 ];
 var partsMouths = [ // Mouths
-   { id: 0, stats: [0,1,2] }, // Bear mouth
-   { id: 1, stats: [0,0,2] }, // Straight mouth
-   { id: 2, stats: [0,1,1] }, // Round hole mouth
-   { id: 3, stats: [1,0,1] }, // Open mouth with teeth
+   { id: 0, stats: [0,1,0] }, // Bear mouth
+   { id: 1, stats: [0,0,1] }, // Straight mouth
+   { id: 2, stats: [0,1,0] }, // Round hole mouth
+   { id: 3, stats: [1,0,0] }, // Open mouth with teeth
    { id: 4, stats: [1,0,0] }  // Closed mouth with teeth
 ];
 var partsNoses = [ // Noses
-   { id: 0, stats: [0,0,2] }, // Square nose
-   { id: 1, stats: [0,0,4] }, // Round nose
+   { id: 0, stats: [0,0,1] }, // Square nose
+   { id: 1, stats: [0,0,1] }, // Round nose
    { id: 2, stats: [1,1,0] }, // Monkey nose
-   { id: 3, stats: [0,0,2] }  // Weird nose
+   { id: 3, stats: [0,0,1] }  // Weird nose
 ];
 var partsEars = [ // Ears
-   { id: 0, stats: [0,1,2] },
-   { id: 1, stats: [0,0,2] },
+   { id: 0, stats: [0,1,1] },
+   { id: 1, stats: [0,0,1] },
    { id: 2, stats: [1,1,0] }
 ];
 
@@ -324,6 +315,8 @@ var Breakout = function ( ) {
 
       this.paddles[0].color = p1.color;
       this.paddles[1].color = p2.color;
+
+      this.t = 0;
    }
 
    // Generate random field
@@ -355,6 +348,7 @@ var Breakout = function ( ) {
 
          var color = Math.floor ( Math.random() * colorNumber );
          var level = Math.floor ( Math.random() * 5 );
+         if ( level == 4 ) level = Math.floor ( Math.random() * 5 );
 
          var b1 = new BreakoutBrick();
          b1.p[0] = col;
@@ -490,6 +484,17 @@ var Breakout = function ( ) {
       }
 
       this.t += t;
+
+      // Checks for dead players
+      if ( this.p1.hp <= 0 ) {
+         return 1;
+      }
+
+      if ( this.p2.hp <= 0 ) {
+         return 2;
+      }
+
+      return 0;
    }
 
    // Collision checks and resolution
@@ -511,18 +516,18 @@ var Breakout = function ( ) {
 
          // Ball out, player 2
          if ( b.x[1] + ballSize < -this.height / 2 ) {
-            // ... player 2 takes damage
-
+            this.p2.hp--;
             this.balls.splice ( i, 1 ); // Remove the ball
+            this.spawnBall ( 2 );
             console.log ( "OUT, ball " + i + " lost by player 2" );
             continue;
          }
 
          // Ball out, player 1
          if ( b.x[1] > this.height / 2 ) {
-            // ... player 1 takes damage
-
+            this.p1.hp--;
             this.balls.splice ( i, 1 ); // Remove the ball
+            this.spawnBall ( 1 );
             console.log ( "OUT, ball " + i + " lost by player 1" );
             continue;
          }
@@ -590,6 +595,7 @@ var Breakout = function ( ) {
    this.spawnBall = function ( player ) {
       var ball = new BreakoutBall();
       ball.bound = player;
+      ball.x[1] = player == 1 ? (this.height / 2 - brickHeight - paddleHeight - 3 - ballSize) : (- this.height / 2 + brickHeight + 3 + paddleHeight) ;
       this.balls.push(ball);
    }
 
@@ -611,8 +617,7 @@ var Breakout = function ( ) {
       }
    }
 
-   // AI
-   // Controls player 2
+   // AI, controls player 2
    this.ai = function ( ) {
       // No balls = nothing to be done
       if ( this.balls.length <= 0 ) return;
@@ -657,7 +662,9 @@ var Game = function ( ) {
    // 0 = game not setup
    // 1 = breakout phase
    // 2 = loot phase
-   // 3 = game over
+   // 3 = transition breakout -> loot
+   // 4 = game over
+   // 5 = transition breakout -> gameover
    this.state = 0;
 
    // Breakout game object
@@ -666,6 +673,9 @@ var Game = function ( ) {
    // Player object and current opponent
    this.player = 0;
    this.enemy = 0;
+
+   this.t = 0;
+   this.transitionT = 0;
 
    // Game setup function
    this.setup = function ( ) {
@@ -676,6 +686,8 @@ var Game = function ( ) {
 
       this.breakout.setup( this.player, this.enemy );
       this.state = 1;
+
+      this.t = 0;
    }
 
    // Creates a new enemy at random
@@ -684,25 +696,99 @@ var Game = function ( ) {
       this.enemy.randomizeParts();
    }
 
+   // Draw player1 info
+   this.p1info = function ( p1Ctxt ) {
+      var s = this.player.name;
+      p1Ctxt.text ( p1Cnvs.width - font.textWidth(s) - 12, p1Cnvs.height - 6 - font.baselineSkip, s, 0 );
+      this.player.draw ( p1Ctxt, p1Cnvs.width - frameWidth - 12, p1Cnvs.height - frameHeight - font.baselineSkip - 33 );
+      for ( var i = 0; i < this.player.stat(2); ++i ) { // Draw p1 health
+         p1Ctxt.drawImage ( imgHeart, 24 * (i >= this.player.hp), 0, 24, 21, p1Cnvs.width - 24*this.player.stat(2) + 24 * i - 12, p1Cnvs.height - font.baselineSkip - 42, 24, 21 );
+      }
+
+      s = "atk: " + this.player.stat(0);
+      p1Ctxt.text ( p1Cnvs.width - font.textWidth(s) - 12, p1Cnvs.height - 45 - font.baselineSkip - frameHeight, s, 0 );
+
+      s = "def: " + this.player.stat(1);
+      p1Ctxt.text ( p1Cnvs.width - font.textWidth(s) - 12, p1Cnvs.height - 45 - 2*font.baselineSkip - frameHeight, s, 0 );
+
+      s = "hp: " + this.player.stat(2);
+      p1Ctxt.text ( p1Cnvs.width - font.textWidth(s) - 12, p1Cnvs.height - 45 - 3*font.baselineSkip - frameHeight, s, 0 );
+   }
+
+   // Draw player2 info
+   this.p2info = function ( p2Ctxt ) {
+      s = this.enemy.name;
+      p2Ctxt.text ( 12, 12, s, 0 );
+      this.enemy.draw ( p2Ctxt, 12, font.baselineSkip + 36 );
+      for ( var i = 0; i < this.enemy.stat(2); ++i ) { // Draw p2 health
+         p2Ctxt.drawImage ( imgHeart, 24 * (i >= this.enemy.hp), 0, 24, 21, 12 + 24*i, font.baselineSkip + 24, 24, 21 );
+      }
+
+      s = "atk: " + this.enemy.stat(0);
+      p2Ctxt.text ( 12, font.baselineSkip + 36 + frameHeight, s, 0 );
+
+      s = "def: " + this.enemy.stat(1);
+      p2Ctxt.text ( 12, 2*font.baselineSkip + 36 + frameHeight, s, 0 );
+
+      s = "hp: " + this.enemy.stat(2);
+      p2Ctxt.text ( 12, 3*font.baselineSkip + 36 + frameHeight, s, 0 );
+   }
+
    // Draw game function
    this.draw = function ( ctxt, p1Ctxt, p2Ctxt ) {
       if ( this.state == 1 ) {
          this.breakout.draw ( ctxt );
+         this.p1info ( p1Ctxt );
+         this.p2info ( p2Ctxt );
       }
 
-      var s = this.player.name;
-      p1Ctxt.text ( p1Cnvs.width - font.textWidth(s) - 12, p1Cnvs.height - 6 - font.baselineSkip, s, 0 );
-      this.player.draw ( p1Ctxt, p1Cnvs.width - frameWidth - 12, p1Cnvs.height - frameHeight - font.baselineSkip - 6 );
+      if ( this.state == 3 ) {
+         this.breakout.draw ( ctxt );
+         this.p1info ( p1Ctxt );
 
-      s = this.enemy.name;
-      p2Ctxt.text ( 12, 12, s, 0 );
-      this.enemy.draw ( p2Ctxt, 12, font.baselineSkip + 6 );
+         if ( this.t - this.transitionT < 3 ) {
+            if ( Math.floor((this.t - this.transitionT) / 0.5) % 2 == 0 )
+               this.p2info ( p2Ctxt );
+         }
+
+         else {
+            ctxt.fillStyle = "black";
+            ctxt.fillRect ( -ctxt.canvas.width / 2,
+                            -ctxt.canvas.height / 2,
+                             ctxt.canvas.width,
+                             ctxt.canvas.height / 2 * (this.t - this.transitionT - 3) / 2 );
+            ctxt.fillRect ( -ctxt.canvas.width / 2,
+                             ctxt.canvas.height / 2 * (1 - (this.t - this.transitionT - 3) / 2),
+                             ctxt.canvas.width,
+                             ctxt.canvas.height / 2 * (this.t - this.transitionT - 3) / 2 );
+         }
+      }
+
+      if ( this.state == 2 ) {
+         this.p1info ( p1Ctxt );
+      }
    }
 
    // Update game function
    this.update = function ( t ) {
-      if ( this.state == 1 ) {
-         this.breakout.update ( t );
+      this.t += t;
+
+      if ( this.state == 1 ) { // Breakout state
+         var outcome = this.breakout.update ( t );
+         if ( outcome == 1 ) { // Player dead
+            this.state = 5;
+            this.transitionT = this.t;
+         }
+
+         if ( outcome == 2 ) { // Enemy dead
+            this.state = 3;
+            this.transitionT = this.t;
+         }
+      }
+
+      if ( this.state == 3 ) { // Breakout -> loot transition
+         if ( this.t - this.transitionT >= 5 )
+            this.state = 2;
       }
    }
 }
@@ -768,6 +854,10 @@ var setup = function ( ) {
       var b = Math.round ( Math.max(y1,y2)/3 ) * 3;
       this.fillRect ( Math.round ( x/3 ) * 3, a, 3, b-a );
    }
+   p1Ctxt.clear = p2Ctxt.clear = ctxt.clear = function () {
+      this.fillStyle = "black";
+      this.fillRect ( 0, 0, this.canvas.width, this.canvas.height );
+   }
 
    // Register keys
    registerKey ( "left", "ArrowLeft" );
@@ -787,8 +877,9 @@ var setup = function ( ) {
 var draw = function () {
    requestAnimationFrame ( draw );
 
-   ctxt.fillStyle = "black";
-   ctxt.fillRect ( 0, 0, cnvs.width, cnvs.height );
+   ctxt.clear()
+   p1Ctxt.clear();
+   p2Ctxt.clear();
 
    ctxt.save(); ctxt.translate ( cnvs.width/2, cnvs.height/2 );
    g.draw ( ctxt, p1Ctxt, p2Ctxt );
