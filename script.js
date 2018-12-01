@@ -85,6 +85,8 @@ var imgBricks = 0;
 var imgPaddle = 0;
 var imgBall = 0;
 var imgHeart = 0;
+var imgTitle = 0;
+var imgGameOver = 0;
 
 // Loads an array of images from a folder
 var loadImagesArray = function ( folder, n ) {
@@ -107,6 +109,8 @@ var loadImages = function ( ) {
    imgBricks = new Image(); imgBricks.src = "./gfx/bricks.png";
    imgPaddle = new Image(); imgPaddle.src = "./gfx/paddles.png";
    imgBall = new Image(); imgBall.src = "./gfx/ball.png";
+   imgTitle = new Image(); imgTitle.src = "./gfx/title.png";
+   imgGameOver = new Image(); imgGameOver.src = "./gfx/gameover.png";
 
    imgEyes = loadImagesArray ( "./gfx/eyes", eyesNumber );
    imgNose = loadImagesArray ( "./gfx/noses", nosesNumber );
@@ -787,18 +791,15 @@ var Loot = function ( ) {
 // Game class
 var Game = function ( ) {
    // Game state
-   // 0 = game not setup
+   // 0 = title screen
    // 1 = breakout phase
    // 2 = loot phase
-   // 3 = transition breakout -> loot
    // 4 = game over
-   // 5 = transition breakout -> gameover
-   // 6 = transition loot -> breakout
    this.state = 0;
 
    // Score
    this.score = 0;
-   this.maxScore = 0;
+   this.hiscore = 0;
 
    // Breakout game object
    this.breakout = new Breakout();
@@ -823,8 +824,6 @@ var Game = function ( ) {
       this.randomEnemy();
 
       this.breakout.setup( this.player, this.enemy );
-      this.state = 1;
-
       this.t = 0;
    }
 
@@ -874,10 +873,24 @@ var Game = function ( ) {
 
    // Draw game function
    this.draw = function ( ctxt, p1Ctxt, p2Ctxt ) {
-      var s = "score: " + this.score;
-      p1Ctxt.text ( font, p1Ctxt.canvas.width - font.textWidth(s) - 12, 12, s, 0 );
+      if ( this.state != 0 ) {
+         var s = "score: " + this.score;
+         p1Ctxt.text ( font, p1Ctxt.canvas.width - font.textWidth(s) - 12, 12, s, 0 );
+         s = "hiscore: " + this.hiscore;
+         p1Ctxt.text ( font, p1Ctxt.canvas.width - font.textWidth(s) - 12, 12 + font.baselineSkip, s, 0 );
+      }
 
-      if ( this.state == 1 ) { // Breakout
+
+
+      if ( this.state == 0 ) { // Title
+         ctxt.drawImage ( imgTitle, -imgTitle.width / 2, -imgTitle.height / 2 );
+         var s = "press enter if you dare to play";
+         ctxt.text ( font, Math.floor(-font.textWidth(s) / 2), ctxt.canvas.height / 2 - 2*font.baselineSkip - 30, s, 0 );
+         s = "we recommend playing with sound";
+         ctxt.text ( font, Math.floor(-font.textWidth(s) / 2), ctxt.canvas.height / 2 - font.baselineSkip - 27, s, 0 );
+      }
+
+      else if ( this.state == 1 ) { // Breakout
          this.breakout.draw ( ctxt );
          this.p1info ( p1Ctxt );
          this.p2info ( p2Ctxt );
@@ -887,6 +900,18 @@ var Game = function ( ) {
          this.p1info ( p1Ctxt );
          this.loot.draw ( ctxt );
       }
+
+      else if ( this.state == 4 ) { // Game over
+         this.p1info ( p1Ctxt );
+         this.p2info ( p2Ctxt );
+         ctxt.drawImage ( imgGameOver, -imgGameOver.width / 2, -imgGameOver.height / 2 );
+         var s = "if you really want to play again";
+         ctxt.text ( font, Math.floor(-font.textWidth(s) / 2), ctxt.canvas.height / 2 - 2*font.baselineSkip - 30, s, 0 );
+         s = "press enter to start a new game";
+         ctxt.text ( font, Math.floor(-font.textWidth(s) / 2), ctxt.canvas.height / 2 - font.baselineSkip - 27, s, 0 );
+      }
+
+
 
       if ( this.transitionTo >= 0 ) { // Transitions
          ctxt.save ();
@@ -907,6 +932,14 @@ var Game = function ( ) {
             case 2:
             this.loot.draw ( ctxt );
             break;
+
+            case 4:
+            ctxt.drawImage ( imgGameOver, -imgGameOver.width / 2, -imgGameOver.height / 2 );
+            var s = "if you really want to play again";
+            ctxt.text ( font, Math.floor(-font.textWidth(s) / 2), ctxt.canvas.height / 2 - 2*font.baselineSkip - 30, s, 0 );
+            s = "press enter to start a new game";
+            ctxt.text ( font, Math.floor(-font.textWidth(s) / 2), ctxt.canvas.height / 2 - font.baselineSkip - 27, s, 0 );
+            break;
          }
 
          ctxt.restore();
@@ -925,10 +958,17 @@ var Game = function ( ) {
          }
       }
 
+      else if ( this.state == 0 || this.state == 4 ) { // Title screen
+         if ( key("enter") ) {
+            this.setup();
+            this.transition ( 1 );
+         }
+      }
+
       else if ( this.state == 1 ) { // Breakout state
          var outcome = this.breakout.update ( t );
          if ( outcome == 1 ) { // Player dead
-            // DEAD PLAYER TODO
+            this.transition ( 4 );
          }
 
          if ( outcome == 2 ) { // Enemy dead
@@ -1034,7 +1074,7 @@ var setup = function ( ) {
    setupKeys();
 
    // Setup game
-   g.setup();
+   //g.setup();
 
    lastUpdateTime = Date.now();
    requestAnimationFrame ( update );
