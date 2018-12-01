@@ -506,6 +506,8 @@ var Breakout = function ( ) {
       if ( (!l && !r) || (r && l) ) this.paddles[0].dir = 0;
       if ( s ) this.shoot ( 1 );
 
+      var oldBricksNum = this.bricks.length;
+
       // Update the paddles
       for ( var i = 0; i < 2; ++i ) {
          this.paddles[i].update ( t );
@@ -553,14 +555,14 @@ var Breakout = function ( ) {
 
       // Checks for dead players
       if ( this.p1.hp <= 0 ) {
-         return 1;
+         return -1;
       }
 
       if ( this.p2.hp <= 0 ) {
-         return 2;
+         return -2;
       }
 
-      return 0;
+      return oldBricksNum - this.bricks.length;
    }
 
    // Collision checks and resolution
@@ -664,6 +666,7 @@ var Breakout = function ( ) {
       var ball = new BreakoutBall();
       ball.bound = player;
       ball.x[1] = player == 1 ? (this.height / 2 - brickHeight - paddleHeight - 3 - ballSize) : (- this.height / 2 + brickHeight + 3 + paddleHeight) ;
+      ball.x[0] = this.paddles[player - 1].x - ballSize / 2;
       this.balls.push(ball);
    }
 
@@ -799,7 +802,6 @@ var Game = function ( ) {
 
    // Score
    this.score = 0;
-   this.hiscore = 0;
 
    // Breakout game object
    this.breakout = new Breakout();
@@ -825,6 +827,9 @@ var Game = function ( ) {
 
       this.breakout.setup( this.player, this.enemy );
       this.t = 0;
+      this.score = 100;
+
+      if ( localStorage.hiscore == undefined ) localStorage.hiscore = 0;
    }
 
    // Creates a new enemy at random
@@ -876,7 +881,7 @@ var Game = function ( ) {
       if ( this.state != 0 ) {
          var s = "score: " + this.score;
          p1Ctxt.text ( font, p1Ctxt.canvas.width - font.textWidth(s) - 12, 12, s, 0 );
-         s = "hiscore: " + this.hiscore;
+         s = "hiscore: " + localStorage.hiscore;
          p1Ctxt.text ( font, p1Ctxt.canvas.width - font.textWidth(s) - 12, 12 + font.baselineSkip, s, 0 );
       }
 
@@ -946,6 +951,13 @@ var Game = function ( ) {
       }
    }
 
+   // Give score
+   this.giveScore = function ( s ) {
+      this.score += s;
+      if ( localStorage.hiscore < this.score )
+         localStorage.hiscore = this.score;
+   }
+
    // Update game function
    this.update = function ( t ) {
       this.t += t;
@@ -967,18 +979,24 @@ var Game = function ( ) {
 
       else if ( this.state == 1 ) { // Breakout state
          var outcome = this.breakout.update ( t );
-         if ( outcome == 1 ) { // Player dead
+         if ( outcome == -1 ) { // Player dead
             this.transition ( 4 );
+            sfxLoop.stop();
          }
 
-         if ( outcome == 2 ) { // Enemy dead
+         if ( outcome == -2 ) { // Enemy dead
             this.loot = new Loot();
             this.loot.setup ( this.player, this.enemy );
             this.transition ( 2 ); // Transition to loot
 
             sfxLoop.stop();
             sfxWin.play();
+
+            this.giveScore ( 100 );
          }
+
+         if ( outcome >= 0 )
+            this.giveScore ( -outcome );
       }
 
       else if ( this.state == 2 ) { // Loot state
