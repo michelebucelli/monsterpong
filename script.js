@@ -163,7 +163,7 @@ var partsNoses = [ // Noses
    { id: 3, name: "NOSE", stats: [1,0,1] }  // Weird nose
 ];
 var partsEars = [ // Ears
-   { id: 0, name: "EARS", stats: [1,0,1] },
+   { id: 0, name: "EARS", stats: [1,0,0] },
    { id: 1, name: "EARS", stats: [1,1,0] },
    { id: 2, name: "EARS", stats: [1,0,1] }
 ];
