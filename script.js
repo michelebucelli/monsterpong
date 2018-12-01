@@ -1,12 +1,3 @@
-// Miscellaneous utilities /////////////////////////////////////////////////////
-
-var randn = function ( mu, sigma ) {
-   var u = 0, v = 0;
-   while ( u == 0 ) u = Math.random();
-   while ( v == 0 ) v = Math.random();
-   return Math.sqrt ( -2.0 * Math.log(u) ) * Math.cos ( 2.0 * Math.PI * v ) * sigma + mu;
-}
-
 // SFX /////////////////////////////////////////////////////////////////////////
 
 var Sound = function ( src ) {
@@ -53,11 +44,11 @@ var font = 0;
 // Number of available options for each part. The values imply that the
 // corresponding member of a monster can take any integer value from 1 to num-1
 const colorNumber = 3;
-const eyesNumber = 5;
+const eyesNumber = 6;
 const nosesNumber = 4;
-const mouthsNumber = 5;
-const earsNumber = 3;
-const extraNumber = 3;
+const mouthsNumber = 6;
+const earsNumber = 4;
+const extraNumber = 4;
 
 // Size of the reference frame. Used to crop sprite sheets. Pixels
 const frameWidth = 150;
@@ -144,21 +135,24 @@ var MonsterPart = function ( ) {
 var partsExtra = [ // Extras
    { id: 0, name: "EXTRA", stats: [1,0,0] }, // Big horns
    { id: 1, name: "EXTRA", stats: [0,1,0] }, // Small horns
-   { id: 2, name: "EXTRA", stats: [0,0,1] }  // Flurry hair
+   { id: 2, name: "EXTRA", stats: [0,0,1] }, // Flurry hair
+   { id: 3, name: "EXTRA", stats: [0,0,1] }  // Curl
 ];
 var partsEyes = [ // Eyes
    { id: 0, name: "EYES", stats: [1,0,1] }, // Big angry eye
    { id: 1, name: "EYES", stats: [0,1,1] }, // Three dark eyes
    { id: 2, name: "EYES", stats: [1,0,1] }, // Green scared eyes
    { id: 3, name: "EYES", stats: [1,1,0] }, // Three bright eyes
-   { id: 4, name: "EYES", stats: [0,0,2] }  // Big cute eye
+   { id: 4, name: "EYES", stats: [0,0,2] }, // Big cute eye
+   { id: 5, name: "EYES", stats: [2,0,0] }, // Sunglasses
 ];
 var partsMouths = [ // Mouths
    { id: 0, name: "MOUTH", stats: [0,0,2] }, // Bear mouth
    { id: 1, name: "MOUTH", stats: [1,0,1] }, // Straight mouth
    { id: 2, name: "MOUTH", stats: [0,1,1] }, // Round hole mouth
    { id: 3, name: "MOUTH", stats: [1,0,1] }, // Open mouth with teeth
-   { id: 4, name: "MOUTH", stats: [1,1,0] }  // Closed mouth with teeth
+   { id: 4, name: "MOUTH", stats: [1,1,0] }, // Closed mouth with teeth
+   { id: 5, name: "MOUTH", stats: [1,0,1] }  // Fangs
 ];
 var partsNoses = [ // Noses
    { id: 0, name: "NOSE", stats: [0,1,1] }, // Square nose
@@ -169,7 +163,8 @@ var partsNoses = [ // Noses
 var partsEars = [ // Ears
    { id: 0, name: "EARS", stats: [1,0,1] },
    { id: 1, name: "EARS", stats: [0,1,1] },
-   { id: 2, name: "EARS", stats: [1,0,1] }
+   { id: 2, name: "EARS", stats: [1,0,1] },
+   { id: 3, name: "EARS", stats: [0,0,2] }
 ];
 
 // Monster class
