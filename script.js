@@ -7,6 +7,45 @@ var randn = function ( mu, sigma ) {
    return Math.sqrt ( -2.0 * Math.log(u) ) * Math.cos ( 2.0 * Math.PI * v ) * sigma + mu;
 }
 
+// SFX /////////////////////////////////////////////////////////////////////////
+
+var Sound = function ( src ) {
+   this.sfx = new Audio ( src );
+   this.sfx.addEventListener('timeupdate', function(){
+      if ( !this.loop ) return;
+
+      var buffer = 0.36;
+      if(this.currentTime > this.duration - buffer){
+         this.currentTime = 0
+         this.play()
+      }}, false);
+
+   this.play = function () {
+      this.sfx.currentTime = 0;
+      this.sfx.play();
+      this.sfx.loop = false;
+   }
+
+   this.loop = function () {
+      this.sfx.play();
+      this.sfx.loop = true;
+   }
+
+   this.stop = function () { this.sfx.pause(); }
+}
+
+var sfxIntro = new Sound ( "sfx/intro.wav" );
+sfxIntro.sfx.addEventListener ( 'timeupdate', function () {
+   var buffer = 0.3;
+   if ( this.currentTime > this.duration - buffer ) {
+      sfxLoop.loop();
+   }
+} );
+var sfxLoop = new Sound ( "sfx/loop.wav" );
+var sfxTick1 = new Sound ( "sfx/tick1.wav" );
+var sfxTick2 = new Sound ( "sfx/tick2.wav" );
+var sfxWin = new Sound ( "sfx/victory.wav" );
+
 // Global graphics /////////////////////////////////////////////////////////////
 
 var font = 0;
@@ -99,34 +138,34 @@ var MonsterPart = function ( ) {
 
 // Parts archive
 var partsExtra = [ // Extras
-   { id: 0, name: "EXTRA", stats: [1,1,0] }, // Big horns
-   { id: 1, name: "EXTRA", stats: [1,0,1] }, // Small horns
-   { id: 2, name: "EXTRA", stats: [0,1,1] }  // Flurry hair
+   { id: 0, name: "EXTRA", stats: [1,0,0] }, // Big horns
+   { id: 1, name: "EXTRA", stats: [0,1,0] }, // Small horns
+   { id: 2, name: "EXTRA", stats: [0,0,1] }  // Flurry hair
 ];
 var partsEyes = [ // Eyes
-   { id: 0, name: "EYES", stats: [1,0,1] }, // Big angry eye
-   { id: 1, name: "EYES", stats: [0,0,1] }, // Three dark eyes
-   { id: 2, name: "EYES", stats: [0,0,1] }, // Green scared eyes
-   { id: 3, name: "EYES", stats: [1,0,1] }, // Three bright eyes
-   { id: 4, name: "EYES", stats: [0,1,1] }  // Big cute eye
+   { id: 0, name: "EYES", stats: [2,0,0] }, // Big angry eye
+   { id: 1, name: "EYES", stats: [0,1,1] }, // Three dark eyes
+   { id: 2, name: "EYES", stats: [1,0,1] }, // Green scared eyes
+   { id: 3, name: "EYES", stats: [1,1,0] }, // Three bright eyes
+   { id: 4, name: "EYES", stats: [0,0,2] }  // Big cute eye
 ];
 var partsMouths = [ // Mouths
-   { id: 0, name: "MOUTH", stats: [0,1,0] }, // Bear mouth
-   { id: 1, name: "MOUTH", stats: [0,0,1] }, // Straight mouth
-   { id: 2, name: "MOUTH", stats: [0,1,0] }, // Round hole mouth
-   { id: 3, name: "MOUTH", stats: [1,0,0] }, // Open mouth with teeth
-   { id: 4, name: "MOUTH", stats: [1,0,0] }  // Closed mouth with teeth
+   { id: 0, name: "MOUTH", stats: [0,0,2] }, // Bear mouth
+   { id: 1, name: "MOUTH", stats: [1,0,1] }, // Straight mouth
+   { id: 2, name: "MOUTH", stats: [0,2,0] }, // Round hole mouth
+   { id: 3, name: "MOUTH", stats: [2,0,0] }, // Open mouth with teeth
+   { id: 4, name: "MOUTH", stats: [1,1,0] }  // Closed mouth with teeth
 ];
 var partsNoses = [ // Noses
-   { id: 0, name: "NOSE", stats: [0,0,1] }, // Square nose
-   { id: 1, name: "NOSE", stats: [0,0,1] }, // Round nose
+   { id: 0, name: "NOSE", stats: [0,1,1] }, // Square nose
+   { id: 1, name: "NOSE", stats: [0,0,2] }, // Round nose
    { id: 2, name: "NOSE", stats: [1,1,0] }, // Monkey nose
-   { id: 3, name: "NOSE", stats: [0,0,1] }  // Weird nose
+   { id: 3, name: "NOSE", stats: [1,0,1] }  // Weird nose
 ];
 var partsEars = [ // Ears
-   { id: 0, name: "EARS", stats: [0,1,1] },
-   { id: 1, name: "EARS", stats: [0,0,1] },
-   { id: 2, name: "EARS", stats: [1,1,0] }
+   { id: 0, name: "EARS", stats: [1,0,1] },
+   { id: 1, name: "EARS", stats: [1,1,0] },
+   { id: 2, name: "EARS", stats: [1,0,1] }
 ];
 
 // Monster class
@@ -333,11 +372,11 @@ var Breakout = function ( ) {
 
       console.log ( "GENERATING BREAKOUT FIELD, " + cols + " columns, " + rows + " rows" );
 
-      for ( var i = 0; i < 14; ++i ) {
+      for ( var i = 0; i < 9; ++i ) {
          var duplicate = 1;
          var col = 0, row = 0;
          while ( duplicate ) {
-            row = Math.floor ( Math.random() * (rows / 2 - 4) );
+            row = Math.floor ( Math.random() * (rows / 2 - 5) );
 
             var maxCol = cols / 2 + (row % 2 == 0);
             col = Math.floor ( Math.random() * maxCol );
@@ -399,20 +438,32 @@ var Breakout = function ( ) {
    this.setupDefenses = function ( ) {
       var cols = cnvs.width / brickWidth;
 
-      for ( var i = 0; i < 2*cols; ++i ) {
+      for ( var i = 0; i < cols; ++i ) {
          // P1 defenses
          var b1 = new BreakoutBrick();
+         var p1d = this.p1.stat(1);
          b1.color = this.p1.color;
-         b1.level = Math.min ( this.p1.stat(1), 3 );
-         b1.p[0] = i * brickWidth - this.width;
+
+         if ( p1d > 3 && (i < p1d - 3 || i >= cols - (p1d - 3)) )
+            b1.level = 4;
+         else
+            b1.level = Math.min ( p1d, 3 );
+
+         b1.p[0] = i * brickWidth - this.width / 2;
          b1.p[1] = this.height / 2 - brickHeight;
          this.bricks.push ( b1 );
 
          // P2 defenses
          var b2 = new BreakoutBrick();
+         var p2d = this.p2.stat(1);
          b2.color = this.p2.color;
-         b2.level = Math.min ( this.p2.stat(1), 3 );
-         b2.p[0] = i * brickWidth - this.width;
+
+         if ( p2d > 3 && (i < p2d - 3 || i >= cols - (p2d - 3)) )
+            b2.level = 4;
+         else
+            b2.level = Math.min ( p2d, 3 );
+
+         b2.p[0] = i * brickWidth - this.width / 2;
          b2.p[1] = -this.height / 2;
          this.bricks.push ( b2 );
       }
@@ -435,6 +486,14 @@ var Breakout = function ( ) {
 
    // Breakout update
    this.update = function ( t ) {
+      this.t += t;
+      t = t * (1 + 0.5 *(1 - Math.exp(-this.t / 100)));
+
+      if ( sfxIntro.sfx.paused && sfxLoop.sfx.paused ) {
+         sfxLoop.stop();
+         sfxIntro.play();
+      }
+
       // Moves enemy with AI, player according to keys
       this.ai();
       var l = key("left"), r = key("right"), s = key("shoot");
@@ -488,8 +547,6 @@ var Breakout = function ( ) {
          }
       }
 
-      this.t += t;
-
       // Checks for dead players
       if ( this.p1.hp <= 0 ) {
          return 1;
@@ -525,6 +582,7 @@ var Breakout = function ( ) {
             this.balls.splice ( i, 1 ); // Remove the ball
             this.spawnBall ( 2 );
             console.log ( "OUT, ball " + i + " lost by player 2" );
+            sfxTick1.play();
             continue;
          }
 
@@ -534,6 +592,7 @@ var Breakout = function ( ) {
             this.balls.splice ( i, 1 ); // Remove the ball
             this.spawnBall ( 1 );
             console.log ( "OUT, ball " + i + " lost by player 1" );
+            sfxTick2.play();
             continue;
          }
 
@@ -637,7 +696,7 @@ var Breakout = function ( ) {
          if ( this.balls[i].x[1] < nearestBall.x[1] )
             nearestBall = this.balls[i];
 
-         if ( this.balls[i].bound == 2 && this.t >= 2 )
+         if ( this.balls[i].bound == 2 && this.t >= 3.5 )
             this.shoot ( 2 );
       }
 
@@ -683,15 +742,18 @@ var Loot = function ( ) {
       if ( key("down") && (this.t - this.moveT) > 0.1 ) {
          this.selected = (this.selected + 1 ) % 5;
          this.moveT = this.t;
+         sfxTick1.play();
       }
 
       if ( key("up") && (this.t - this.moveT) > 0.1 ) {
          this.selected = this.selected == 0 ? 4 : this.selected - 1;
          this.moveT = this.t;
+         sfxTick2.play();
       }
 
       if ( key("enter") ) {
          this.player.parts[i] = this.enemy.parts[i];
+         this.player.hp = Math.min ( this.player.hp + 1, this.player.stat(2) );
          return 1;
       }
 
@@ -733,6 +795,10 @@ var Game = function ( ) {
    // 5 = transition breakout -> gameover
    // 6 = transition loot -> breakout
    this.state = 0;
+
+   // Score
+   this.score = 0;
+   this.maxScore = 0;
 
    // Breakout game object
    this.breakout = new Breakout();
@@ -808,6 +874,9 @@ var Game = function ( ) {
 
    // Draw game function
    this.draw = function ( ctxt, p1Ctxt, p2Ctxt ) {
+      var s = "score: " + this.score;
+      p1Ctxt.text ( font, p1Ctxt.canvas.width - font.textWidth(s) - 12, 12, s, 0 );
+
       if ( this.state == 1 ) { // Breakout
          this.breakout.draw ( ctxt );
          this.p1info ( p1Ctxt );
@@ -817,13 +886,11 @@ var Game = function ( ) {
       else if ( this.state == 2 ) { // Loot
          this.p1info ( p1Ctxt );
          this.loot.draw ( ctxt );
-         console.log("LOOT");
       }
 
       if ( this.transitionTo >= 0 ) { // Transitions
          ctxt.save ();
          ctxt.fillStyle = "black";
-         console.log ( ctxt.canvas.height * (this.t - this.transitionT) / this.transitionDuration )
          ctxt.beginPath();
          ctxt.rect ( -ctxt.canvas.width / 2,
                      -ctxt.canvas.height / 2,
@@ -868,6 +935,9 @@ var Game = function ( ) {
             this.loot = new Loot();
             this.loot.setup ( this.player, this.enemy );
             this.transition ( 2 ); // Transition to loot
+
+            sfxLoop.stop();
+            sfxWin.play();
          }
       }
 
