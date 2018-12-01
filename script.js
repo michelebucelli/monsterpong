@@ -99,34 +99,34 @@ var MonsterPart = function ( ) {
 
 // Parts archive
 var partsExtra = [ // Extras
-   { id: 0, name: "EXTRA", stats: [1,1,0] }, // Big horns
-   { id: 1, name: "EXTRA", stats: [1,0,1] }, // Small horns
-   { id: 2, name: "EXTRA", stats: [0,1,1] }  // Flurry hair
+   { id: 0, name: "EXTRA", stats: [1,0,0] }, // Big horns
+   { id: 1, name: "EXTRA", stats: [0,1,0] }, // Small horns
+   { id: 2, name: "EXTRA", stats: [0,0,1] }  // Flurry hair
 ];
 var partsEyes = [ // Eyes
-   { id: 0, name: "EYES", stats: [1,0,1] }, // Big angry eye
-   { id: 1, name: "EYES", stats: [0,0,1] }, // Three dark eyes
-   { id: 2, name: "EYES", stats: [0,0,1] }, // Green scared eyes
-   { id: 3, name: "EYES", stats: [1,0,1] }, // Three bright eyes
-   { id: 4, name: "EYES", stats: [0,1,1] }  // Big cute eye
+   { id: 0, name: "EYES", stats: [2,0,0] }, // Big angry eye
+   { id: 1, name: "EYES", stats: [0,1,1] }, // Three dark eyes
+   { id: 2, name: "EYES", stats: [1,0,1] }, // Green scared eyes
+   { id: 3, name: "EYES", stats: [1,1,0] }, // Three bright eyes
+   { id: 4, name: "EYES", stats: [0,0,2] }  // Big cute eye
 ];
 var partsMouths = [ // Mouths
-   { id: 0, name: "MOUTH", stats: [0,1,0] }, // Bear mouth
-   { id: 1, name: "MOUTH", stats: [0,0,1] }, // Straight mouth
-   { id: 2, name: "MOUTH", stats: [0,1,0] }, // Round hole mouth
-   { id: 3, name: "MOUTH", stats: [1,0,0] }, // Open mouth with teeth
-   { id: 4, name: "MOUTH", stats: [1,0,0] }  // Closed mouth with teeth
+   { id: 0, name: "MOUTH", stats: [0,0,2] }, // Bear mouth
+   { id: 1, name: "MOUTH", stats: [1,0,1] }, // Straight mouth
+   { id: 2, name: "MOUTH", stats: [0,2,0] }, // Round hole mouth
+   { id: 3, name: "MOUTH", stats: [2,0,0] }, // Open mouth with teeth
+   { id: 4, name: "MOUTH", stats: [1,1,0] }  // Closed mouth with teeth
 ];
 var partsNoses = [ // Noses
-   { id: 0, name: "NOSE", stats: [0,0,1] }, // Square nose
-   { id: 1, name: "NOSE", stats: [0,0,1] }, // Round nose
+   { id: 0, name: "NOSE", stats: [0,1,1] }, // Square nose
+   { id: 1, name: "NOSE", stats: [0,0,2] }, // Round nose
    { id: 2, name: "NOSE", stats: [1,1,0] }, // Monkey nose
-   { id: 3, name: "NOSE", stats: [0,0,1] }  // Weird nose
+   { id: 3, name: "NOSE", stats: [1,0,1] }  // Weird nose
 ];
 var partsEars = [ // Ears
-   { id: 0, name: "EARS", stats: [0,1,1] },
-   { id: 1, name: "EARS", stats: [0,0,1] },
-   { id: 2, name: "EARS", stats: [1,1,0] }
+   { id: 0, name: "EARS", stats: [1,0,0] },
+   { id: 1, name: "EARS", stats: [0,1,0] },
+   { id: 2, name: "EARS", stats: [0,0,1] }
 ];
 
 // Monster class
@@ -333,11 +333,11 @@ var Breakout = function ( ) {
 
       console.log ( "GENERATING BREAKOUT FIELD, " + cols + " columns, " + rows + " rows" );
 
-      for ( var i = 0; i < 14; ++i ) {
+      for ( var i = 0; i < 9; ++i ) {
          var duplicate = 1;
          var col = 0, row = 0;
          while ( duplicate ) {
-            row = Math.floor ( Math.random() * (rows / 2 - 4) );
+            row = Math.floor ( Math.random() * (rows / 2 - 5) );
 
             var maxCol = cols / 2 + (row % 2 == 0);
             col = Math.floor ( Math.random() * maxCol );
@@ -692,6 +692,7 @@ var Loot = function ( ) {
 
       if ( key("enter") ) {
          this.player.parts[i] = this.enemy.parts[i];
+         this.player.hp = Math.min ( this.player.hp + 1, this.player.stat(3) );
          return 1;
       }
 
