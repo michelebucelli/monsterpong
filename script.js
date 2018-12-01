@@ -886,7 +886,7 @@ var Game = function ( ) {
          ctxt.drawImage ( imgTitle, -imgTitle.width / 2, -imgTitle.height / 2 );
          var s = "press enter if you dare to play";
          ctxt.text ( font, Math.floor(-font.textWidth(s) / 2), ctxt.canvas.height / 2 - 2*font.baselineSkip - 30, s, 0 );
-         s = "we recommend playing with sound";
+         s = "we recommend fullscreen and sound";
          ctxt.text ( font, Math.floor(-font.textWidth(s) / 2), ctxt.canvas.height / 2 - font.baselineSkip - 27, s, 0 );
       }
 
