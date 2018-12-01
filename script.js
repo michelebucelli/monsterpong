@@ -167,8 +167,8 @@ var partsNoses = [ // Noses
    { id: 3, name: "NOSE", stats: [1,0,1] }  // Weird nose
 ];
 var partsEars = [ // Ears
-   { id: 0, name: "EARS", stats: [1,0,0] },
-   { id: 1, name: "EARS", stats: [1,1,0] },
+   { id: 0, name: "EARS", stats: [1,0,1] },
+   { id: 1, name: "EARS", stats: [0,1,1] },
    { id: 2, name: "EARS", stats: [1,0,1] }
 ];
 
@@ -257,7 +257,8 @@ var BreakoutBrick = function ( ) {
 
 // Breakout paddle class
 var BreakoutPaddle = function ( ) {
-   this.x = 0; // Position of the paddle [pixels]
+   this.x = 0; // x position of the paddle [pixels]
+   this.y = 0; // y position of the paddle
    this.v = 0; // Velocity of the paddle [pixels/s]
    this.w = 42*3; // Width of the paddle [pixels]
 
@@ -360,6 +361,11 @@ var Breakout = function ( ) {
          this.spawnBall(2);
 
       this.setupDefenses();
+
+      this.paddles[0].y = this.height / 2 - brickHeight - paddleHeight - 6;
+      this.paddles[0].targety = this.paddles[0].y;
+      this.paddles[1].y = -this.height / 2 + brickHeight + 6;
+      this.paddles[1].targety = this.paddles[1].y;
 
       this.paddles[0].color = p1.color;
       this.paddles[1].color = p2.color;
@@ -480,8 +486,10 @@ var Breakout = function ( ) {
          this.bricks[i].draw ( ctxt );
 
       // Draw the paddles
-      this.paddles[0].draw ( ctxt, this.height / 2 - brickHeight - paddleHeight - 3 );
-      this.paddles[1].draw ( ctxt, -this.height / 2 + brickHeight + 3 );
+      var y0 = Math.round ( this.paddles[0].y / 3 ) * 3;
+      var y1 = Math.round ( this.paddles[1].y / 3 ) * 3;
+      this.paddles[0].draw ( ctxt, y0 );
+      this.paddles[1].draw ( ctxt, y1 );
 
       // Draw the balls
       for ( var i = 0; i < this.balls.length; ++i )
@@ -531,7 +539,9 @@ var Breakout = function ( ) {
 
             var targetX = this.paddles[this.balls[i].bound - 1].x - howManyBound * ballSize / 2 + howManyBoundBefore * ballSize + ballSize / 2;
 
-            this.balls[i].x[1] = this.balls[i].bound == 1 ? (this.height / 2 - brickHeight - paddleHeight - 3 - ballSize) : (- this.height / 2 + brickHeight + 3 + paddleHeight) ;
+            this.balls[i].x[1] = this.paddles[this.balls[i].bound - 1].y;
+            if ( this.balls[i].bound == 1 ) this.balls[i].x[1] -= ballSize;
+            else this.balls[i].x[1] += paddleHeight;
             this.balls[i].v[0] = (targetX - this.balls[i].x[0] - ballSize / 2) * 15;
          }
 
@@ -603,8 +613,7 @@ var Breakout = function ( ) {
          }
 
          // Ball against paddles: paddle player 1
-         if ( b.v[1] > 0 && b.x[1] + ballSize > this.height / 2 - brickHeight - paddleHeight - 3
-            && b.x[1] < this.height / 2 - brickHeight - 3
+         if ( b.v[1] > 0 && b.x[1] + ballSize > this.paddles[0].y && b.x[1] < this.paddles[0].y
             && Math.abs ( b.x[0] + ballSize/2 - this.paddles[0].x ) < ( this.paddles[0].w + ballSize ) / 2 ) {
 
             b.v[0] = 0.5 * ( b.v[0] + this.paddles[0].v );
@@ -615,8 +624,7 @@ var Breakout = function ( ) {
          }
 
          // Ball against paddles: paddle player 2
-         if ( b.v[1] < 0 && b.x[1] < -this.height / 2 + brickHeight + 3 + paddleHeight
-            && b.x[1] > -this.height / 2 + brickHeight + 3
+         if ( b.v[1] < 0 && b.x[1] < this.paddles[1].y + paddleHeight && b.x[1] + ballSize > this.paddles[1].y
             && Math.abs ( b.x[0] + ballSize/2 - this.paddles[1].x ) < ( this.paddles[1].w + ballSize ) / 2 ) {
 
             b.v[0] = 0.5 * ( b.v[0] + this.paddles[1].v );
