@@ -720,7 +720,8 @@ var Breakout = function ( ) {
 
       // Moves according to nearest incoming ball
       // If no ball is incoming, moves according to the nearest
-      var targetBall = (nearestIncomingBall.v[1] < 0 ? nearestIncomingBall : this.balls[Math.floor( Math.random() * this.balls.length )]);
+      //var targetBall = (nearestIncomingBall.v[1] < 0 ? nearestIncomingBall : this.balls[Math.floor( Math.random() * this.balls.length )]);
+      var targetBall = nearestBall;
       var delta = targetBall.x[0] + ballSize / 2 - this.paddles[1].x;
 
       if ( Math.abs(delta) > this.paddles[1].w / 4 )
@@ -1011,7 +1012,7 @@ var Game = function ( ) {
          if ( outcome >= 0 )
             this.giveScore ( -outcome );
 
-         if ( Math.floor(oldT) != Math.floor(this.breakout.t) )
+         if ( Math.floor(oldT/5) != Math.floor(this.breakout.t/5) )
             this.giveScore ( -1 );
       }
 
