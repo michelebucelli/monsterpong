@@ -147,7 +147,7 @@ var partsExtra = [ // Extras
    { id: 2, name: "EXTRA", stats: [0,0,1] }  // Flurry hair
 ];
 var partsEyes = [ // Eyes
-   { id: 0, name: "EYES", stats: [2,0,0] }, // Big angry eye
+   { id: 0, name: "EYES", stats: [1,0,1] }, // Big angry eye
    { id: 1, name: "EYES", stats: [0,1,1] }, // Three dark eyes
    { id: 2, name: "EYES", stats: [1,0,1] }, // Green scared eyes
    { id: 3, name: "EYES", stats: [1,1,0] }, // Three bright eyes
@@ -156,8 +156,8 @@ var partsEyes = [ // Eyes
 var partsMouths = [ // Mouths
    { id: 0, name: "MOUTH", stats: [0,0,2] }, // Bear mouth
    { id: 1, name: "MOUTH", stats: [1,0,1] }, // Straight mouth
-   { id: 2, name: "MOUTH", stats: [0,2,0] }, // Round hole mouth
-   { id: 3, name: "MOUTH", stats: [2,0,0] }, // Open mouth with teeth
+   { id: 2, name: "MOUTH", stats: [0,1,1] }, // Round hole mouth
+   { id: 3, name: "MOUTH", stats: [1,0,1] }, // Open mouth with teeth
    { id: 4, name: "MOUTH", stats: [1,1,0] }  // Closed mouth with teeth
 ];
 var partsNoses = [ // Noses
@@ -382,13 +382,15 @@ var Breakout = function ( ) {
 
       console.log ( "GENERATING BREAKOUT FIELD, " + cols + " columns, " + rows + " rows" );
 
-      for ( var i = 0; i < 9; ++i ) {
+      for ( var i = 0; i < 10; ++i ) {
          var duplicate = 1;
          var col = 0, row = 0;
+         var maxRow = rows / 2 - 4;
          while ( duplicate ) {
-            row = Math.floor ( Math.random() * (rows / 2 - 5) );
+            row = Math.floor ( Math.random() * maxRow );
 
             var maxCol = cols / 2 + (row % 2 == 0);
+            if ( row >= maxRow - 1 ) maxCol -= 1;
             col = Math.floor ( Math.random() * maxCol );
 
             duplicate = 0;
@@ -402,7 +404,8 @@ var Breakout = function ( ) {
 
          var color = Math.floor ( Math.random() * colorNumber );
          var level = Math.floor ( Math.random() * 5 );
-         if ( level == 4 ) level = Math.floor ( Math.random() * 5 );
+         if ( level < 2 ) level = Math.floor ( Math.random() * 5 );
+         if ( level == 4 && Math.random() < 0.25 ) level = 3
 
          var b1 = new BreakoutBrick();
          b1.p[0] = col;
@@ -454,7 +457,7 @@ var Breakout = function ( ) {
          var p1d = this.p1.stat(1);
          b1.color = this.p1.color;
 
-         if ( p1d > 3 && (i < p1d - 3 || i >= cols - (p1d - 3)) )
+         if ( p1d > 3 && i >= cols/2 - p1d + 3 && i < cols/2 + p1d - 3)
             b1.level = 4;
          else
             b1.level = Math.min ( p1d, 3 );
@@ -468,7 +471,7 @@ var Breakout = function ( ) {
          var p2d = this.p2.stat(1);
          b2.color = this.p2.color;
 
-         if ( p2d > 3 && (i < p2d - 3 || i >= cols - (p2d - 3)) )
+         if ( p2d > 3 && i >= cols/2 - p2d + 3 && i < cols/2 + p2d - 3)
             b2.level = 4;
          else
             b2.level = Math.min ( p2d, 3 );
@@ -717,10 +720,10 @@ var Breakout = function ( ) {
 
       // Moves according to nearest incoming ball
       // If no ball is incoming, moves according to the nearest
-      var targetBall = (nearestIncomingBall.v[1] < 0 ? nearestIncomingBall : nearestBall);
+      var targetBall = (nearestIncomingBall.v[1] < 0 ? nearestIncomingBall : this.balls[Math.floor( Math.random() * this.balls.length )]);
       var delta = targetBall.x[0] + ballSize / 2 - this.paddles[1].x;
 
-      if ( Math.abs(delta) > this.paddles[1].w / 2 )
+      if ( Math.abs(delta) > this.paddles[1].w / 4 )
          this.paddles[1].dir = Math.sign ( delta );
 
       // If the target ball is very close and incoming, move a little at random to give effect
@@ -962,8 +965,7 @@ var Game = function ( ) {
    // Give score
    this.giveScore = function ( s ) {
       this.score += s;
-      if ( localStorage.hiscore < this.score )
-         localStorage.hiscore = this.score;
+      if ( this.score < 0 ) this.score = 0;
    }
 
    // Update game function
@@ -986,8 +988,11 @@ var Game = function ( ) {
       }
 
       else if ( this.state == 1 ) { // Breakout state
+         var oldT = this.breakout.t;
          var outcome = this.breakout.update ( t );
          if ( outcome == -1 ) { // Player dead
+            if ( localStorage.hiscore < this.score )
+               localStorage.hiscore = this.score;
             this.transition ( 4 );
             sfxLoop.stop();
          }
@@ -1005,6 +1010,9 @@ var Game = function ( ) {
 
          if ( outcome >= 0 )
             this.giveScore ( -outcome );
+
+         if ( Math.floor(oldT) != Math.floor(this.breakout.t) )
+            this.giveScore ( -1 );
       }
 
       else if ( this.state == 2 ) { // Loot state
