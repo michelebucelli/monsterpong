@@ -57,7 +57,7 @@ var BitFont = function ( src, alphabet, charW, charH ) {
          return this.charWBase;
 
       var chidx = this.ch(char);
-      if ( chidx > 0 ) {
+      if ( chidx >= 0 ) {
          var bbox = this.charBBoxes[chidx];
          ctxt.drawImage ( this.img, bbox[0], bbox[1] + color*this.colorLineHeight, bbox[2], bbox[3], x, y, bbox[2], bbox[3] );
          return bbox[2];

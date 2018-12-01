@@ -99,34 +99,34 @@ var MonsterPart = function ( ) {
 
 // Parts archive
 var partsExtra = [ // Extras
-   { id: 0, stats: [1,1,0] }, // Big horns
-   { id: 1, stats: [1,0,1] }, // Small horns
-   { id: 2, stats: [0,1,1] }  // Flurry hair
+   { id: 0, name: "EXTRA", stats: [1,1,0] }, // Big horns
+   { id: 1, name: "EXTRA", stats: [1,0,1] }, // Small horns
+   { id: 2, name: "EXTRA", stats: [0,1,1] }  // Flurry hair
 ];
 var partsEyes = [ // Eyes
-   { id: 0, stats: [1,0,1] }, // Big angry eye
-   { id: 1, stats: [0,0,1] }, // Three dark eyes
-   { id: 2, stats: [0,0,1] }, // Green scared eyes
-   { id: 3, stats: [1,0,1] }, // Three bright eyes
-   { id: 4, stats: [0,1,1] }  // Big cute eye
+   { id: 0, name: "EYES", stats: [1,0,1] }, // Big angry eye
+   { id: 1, name: "EYES", stats: [0,0,1] }, // Three dark eyes
+   { id: 2, name: "EYES", stats: [0,0,1] }, // Green scared eyes
+   { id: 3, name: "EYES", stats: [1,0,1] }, // Three bright eyes
+   { id: 4, name: "EYES", stats: [0,1,1] }  // Big cute eye
 ];
 var partsMouths = [ // Mouths
-   { id: 0, stats: [0,1,0] }, // Bear mouth
-   { id: 1, stats: [0,0,1] }, // Straight mouth
-   { id: 2, stats: [0,1,0] }, // Round hole mouth
-   { id: 3, stats: [1,0,0] }, // Open mouth with teeth
-   { id: 4, stats: [1,0,0] }  // Closed mouth with teeth
+   { id: 0, name: "MOUTH", stats: [0,1,0] }, // Bear mouth
+   { id: 1, name: "MOUTH", stats: [0,0,1] }, // Straight mouth
+   { id: 2, name: "MOUTH", stats: [0,1,0] }, // Round hole mouth
+   { id: 3, name: "MOUTH", stats: [1,0,0] }, // Open mouth with teeth
+   { id: 4, name: "MOUTH", stats: [1,0,0] }  // Closed mouth with teeth
 ];
 var partsNoses = [ // Noses
-   { id: 0, stats: [0,0,1] }, // Square nose
-   { id: 1, stats: [0,0,1] }, // Round nose
-   { id: 2, stats: [1,1,0] }, // Monkey nose
-   { id: 3, stats: [0,0,1] }  // Weird nose
+   { id: 0, name: "NOSE", stats: [0,0,1] }, // Square nose
+   { id: 1, name: "NOSE", stats: [0,0,1] }, // Round nose
+   { id: 2, name: "NOSE", stats: [1,1,0] }, // Monkey nose
+   { id: 3, name: "NOSE", stats: [0,0,1] }  // Weird nose
 ];
 var partsEars = [ // Ears
-   { id: 0, stats: [0,1,1] },
-   { id: 1, stats: [0,0,1] },
-   { id: 2, stats: [1,1,0] }
+   { id: 0, name: "EARS", stats: [0,1,1] },
+   { id: 1, name: "EARS", stats: [0,0,1] },
+   { id: 2, name: "EARS", stats: [1,1,0] }
 ];
 
 // Monster class
@@ -144,13 +144,15 @@ var Monster = function ( ) {
    // Draws the monster
    //    ctxt: context to draw on
    //    x,y: coordinates for the upper-left corner of the frame
-   this.draw = function ( ctxt, x, y ) {
+   this.draw = function ( ctxt, x, y, parts ) {
+      if ( parts == undefined ) parts = [1,1,1,1,1];
+
       ctxt.drawImage ( imgBody, this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Body
-      ctxt.drawImage ( imgExtra[this.parts[0].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Extra
-      ctxt.drawImage ( imgEyes[this.parts[1].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Eyes
-      ctxt.drawImage ( imgMouth[this.parts[2].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Mouth
-      ctxt.drawImage ( imgNose[this.parts[3].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Nose
-      ctxt.drawImage ( imgEars[this.parts[4].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Ears
+      if ( parts[0] ) ctxt.drawImage ( imgExtra[this.parts[0].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Extra
+      if ( parts[1] ) ctxt.drawImage ( imgEyes[this.parts[1].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Eyes
+      if ( parts[2] ) ctxt.drawImage ( imgMouth[this.parts[2].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Mouth
+      if ( parts[3] ) ctxt.drawImage ( imgNose[this.parts[3].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Nose
+      if ( parts[4] ) ctxt.drawImage ( imgEars[this.parts[4].id], this.color * frameWidth, 0, frameWidth, frameHeight, x, y, frameWidth, frameHeight ); // Ears
    }
 
    // Statistics ///////////////////////////////////////////////////////////////
@@ -295,6 +297,9 @@ var Breakout = function ( ) {
 
    // Breakout setup
    this.setup = function ( p1, p2 ) {
+      this.balls = [];
+      this.bricks = [];
+
       this.p1 = p1;
       this.p2 = p2;
 
@@ -328,13 +333,13 @@ var Breakout = function ( ) {
 
       console.log ( "GENERATING BREAKOUT FIELD, " + cols + " columns, " + rows + " rows" );
 
-      for ( var i = 0; i < 8; ++i ) {
+      for ( var i = 0; i < 14; ++i ) {
          var duplicate = 1;
          var col = 0, row = 0;
          while ( duplicate ) {
             row = Math.floor ( Math.random() * (rows / 2 - 4) );
 
-            var maxCol = cols / 2 - (row % 2 == 0);
+            var maxCol = cols / 2 + (row % 2 == 0);
             col = Math.floor ( Math.random() * maxCol );
 
             duplicate = 0;
@@ -656,6 +661,67 @@ var Breakout = function ( ) {
    }
 }
 
+// Loot game class
+var Loot = function ( ) {
+   this.enemy = 0; // Enemy being looted
+   this.player = 0; // Player
+   this.selected = 0; // Selected part
+   this.partOrder = [ 0, 1, 3, 2, 4 ]// Order of the parts
+
+   this.t = 0;
+   this.moveT = 0;
+
+   this.setup = function ( pl, en ) {
+      this.enemy = en;
+      this.player = pl;
+   }
+
+   this.update = function ( t ) {
+      var i = this.partOrder[this.selected];
+      this.t += t;
+
+      if ( key("down") && (this.t - this.moveT) > 0.1 ) {
+         this.selected = (this.selected + 1 ) % 5;
+         this.moveT = this.t;
+      }
+
+      if ( key("up") && (this.t - this.moveT) > 0.1 ) {
+         this.selected = this.selected == 0 ? 4 : this.selected - 1;
+         this.moveT = this.t;
+      }
+
+      if ( key("enter") ) {
+         this.player.parts[i] = this.enemy.parts[i];
+         return 1;
+      }
+
+      return 0;
+   }
+
+   this.draw = function ( ctxt ) {
+      var i = this.partOrder[this.selected];
+
+      var s = "LOOT! Choose a part to steal from the enemy"
+      ctxt.text ( font, -font.textWidth(s) / 2, -ctxt.canvas.height / 2 + 81, s, 0 );
+      s = "press ENTER to confirm";
+      ctxt.text ( font, Math.floor(-font.textWidth(s) / 2), -ctxt.canvas.height / 2 + 81 + font.baselineSkip, s, 0 );
+
+      var parts = [ 1, 1, 1, 1, 1 ];
+      if ( Math.floor(this.t / 0.5) % 2 ) parts[i] = 0;
+      this.enemy.draw ( ctxt, -ctxt.canvas.width / 2 + 30 , 30 - frameHeight / 2, parts );
+
+      var y0 = 30 - 5 * (2 * font.baselineSkip) / 2;
+
+      // Selected part info
+
+      s = this.enemy.parts[i].name + " atk: " + this.enemy.parts[i].stats[0] + ", def: " + this.enemy.parts[i].stats[1] + ", hp: " + this.enemy.parts[i].stats[2];
+      ctxt.text ( font, ctxt.canvas.width / 2 - font.textWidth(s) - 30, y0 + this.selected * 2 * font.baselineSkip, s, 0 );
+
+      s = "you atk: " + this.player.parts[i].stats[0] + ", def: " + this.player.parts[i].stats[1] + ", hp: " + this.player.parts[i].stats[2];
+      ctxt.text ( font, ctxt.canvas.width / 2 - font.textWidth(s) - 30, y0 + this.selected * 2 * font.baselineSkip + font.baselineSkip, s, 0 );
+   }
+}
+
 // Game class
 var Game = function ( ) {
    // Game state
@@ -665,10 +731,14 @@ var Game = function ( ) {
    // 3 = transition breakout -> loot
    // 4 = game over
    // 5 = transition breakout -> gameover
+   // 6 = transition loot -> breakout
    this.state = 0;
 
    // Breakout game object
    this.breakout = new Breakout();
+
+   // Loot state
+   this.loot = new Loot();
 
    // Player object and current opponent
    this.player = 0;
@@ -676,6 +746,8 @@ var Game = function ( ) {
 
    this.t = 0;
    this.transitionT = 0;
+   this.transitionTo = -1;
+   this.transitionDuration = 0.75;
 
    // Game setup function
    this.setup = function ( ) {
@@ -699,73 +771,78 @@ var Game = function ( ) {
    // Draw player1 info
    this.p1info = function ( p1Ctxt ) {
       var s = this.player.name;
-      p1Ctxt.text ( p1Cnvs.width - font.textWidth(s) - 12, p1Cnvs.height - 6 - font.baselineSkip, s, 0 );
+      p1Ctxt.text ( font, p1Cnvs.width - font.textWidth(s) - 12, p1Cnvs.height - 6 - font.baselineSkip, s, 0 );
       this.player.draw ( p1Ctxt, p1Cnvs.width - frameWidth - 12, p1Cnvs.height - frameHeight - font.baselineSkip - 33 );
       for ( var i = 0; i < this.player.stat(2); ++i ) { // Draw p1 health
          p1Ctxt.drawImage ( imgHeart, 24 * (i >= this.player.hp), 0, 24, 21, p1Cnvs.width - 24*this.player.stat(2) + 24 * i - 12, p1Cnvs.height - font.baselineSkip - 42, 24, 21 );
       }
 
       s = "atk: " + this.player.stat(0);
-      p1Ctxt.text ( p1Cnvs.width - font.textWidth(s) - 12, p1Cnvs.height - 45 - font.baselineSkip - frameHeight, s, 0 );
+      p1Ctxt.text ( font, p1Cnvs.width - font.textWidth(s) - 12, p1Cnvs.height - 45 - font.baselineSkip - frameHeight, s, 0 );
 
       s = "def: " + this.player.stat(1);
-      p1Ctxt.text ( p1Cnvs.width - font.textWidth(s) - 12, p1Cnvs.height - 45 - 2*font.baselineSkip - frameHeight, s, 0 );
+      p1Ctxt.text ( font, p1Cnvs.width - font.textWidth(s) - 12, p1Cnvs.height - 45 - 2*font.baselineSkip - frameHeight, s, 0 );
 
       s = "hp: " + this.player.stat(2);
-      p1Ctxt.text ( p1Cnvs.width - font.textWidth(s) - 12, p1Cnvs.height - 45 - 3*font.baselineSkip - frameHeight, s, 0 );
+      p1Ctxt.text ( font, p1Cnvs.width - font.textWidth(s) - 12, p1Cnvs.height - 45 - 3*font.baselineSkip - frameHeight, s, 0 );
    }
 
    // Draw player2 info
    this.p2info = function ( p2Ctxt ) {
       s = this.enemy.name;
-      p2Ctxt.text ( 12, 12, s, 0 );
+      p2Ctxt.text ( font, 12, 12, s, 0 );
       this.enemy.draw ( p2Ctxt, 12, font.baselineSkip + 36 );
       for ( var i = 0; i < this.enemy.stat(2); ++i ) { // Draw p2 health
          p2Ctxt.drawImage ( imgHeart, 24 * (i >= this.enemy.hp), 0, 24, 21, 12 + 24*i, font.baselineSkip + 24, 24, 21 );
       }
 
       s = "atk: " + this.enemy.stat(0);
-      p2Ctxt.text ( 12, font.baselineSkip + 36 + frameHeight, s, 0 );
+      p2Ctxt.text ( font, 12, font.baselineSkip + 36 + frameHeight, s, 0 );
 
       s = "def: " + this.enemy.stat(1);
-      p2Ctxt.text ( 12, 2*font.baselineSkip + 36 + frameHeight, s, 0 );
+      p2Ctxt.text ( font, 12, 2*font.baselineSkip + 36 + frameHeight, s, 0 );
 
       s = "hp: " + this.enemy.stat(2);
-      p2Ctxt.text ( 12, 3*font.baselineSkip + 36 + frameHeight, s, 0 );
+      p2Ctxt.text ( font, 12, 3*font.baselineSkip + 36 + frameHeight, s, 0 );
    }
 
    // Draw game function
    this.draw = function ( ctxt, p1Ctxt, p2Ctxt ) {
-      if ( this.state == 1 ) {
+      if ( this.state == 1 ) { // Breakout
          this.breakout.draw ( ctxt );
          this.p1info ( p1Ctxt );
          this.p2info ( p2Ctxt );
       }
 
-      if ( this.state == 3 ) {
-         this.breakout.draw ( ctxt );
+      else if ( this.state == 2 ) { // Loot
          this.p1info ( p1Ctxt );
-
-         if ( this.t - this.transitionT < 3 ) {
-            if ( Math.floor((this.t - this.transitionT) / 0.5) % 2 == 0 )
-               this.p2info ( p2Ctxt );
-         }
-
-         else {
-            ctxt.fillStyle = "black";
-            ctxt.fillRect ( -ctxt.canvas.width / 2,
-                            -ctxt.canvas.height / 2,
-                             ctxt.canvas.width,
-                             ctxt.canvas.height / 2 * (this.t - this.transitionT - 3) / 2 );
-            ctxt.fillRect ( -ctxt.canvas.width / 2,
-                             ctxt.canvas.height / 2 * (1 - (this.t - this.transitionT - 3) / 2),
-                             ctxt.canvas.width,
-                             ctxt.canvas.height / 2 * (this.t - this.transitionT - 3) / 2 );
-         }
+         this.loot.draw ( ctxt );
+         console.log("LOOT");
       }
 
-      if ( this.state == 2 ) {
-         this.p1info ( p1Ctxt );
+      if ( this.transitionTo >= 0 ) { // Transitions
+         ctxt.save ();
+         ctxt.fillStyle = "black";
+         console.log ( ctxt.canvas.height * (this.t - this.transitionT) / this.transitionDuration )
+         ctxt.beginPath();
+         ctxt.rect ( -ctxt.canvas.width / 2,
+                     -ctxt.canvas.height / 2,
+                      ctxt.canvas.width,
+                      ctxt.canvas.height * (this.t - this.transitionT) / this.transitionDuration );
+         ctxt.clip ();
+         ctxt.fill ();
+
+         switch ( this.transitionTo ) {
+            case 1:
+            this.breakout.draw ( ctxt );
+            break;
+
+            case 2:
+            this.loot.draw ( ctxt );
+            break;
+         }
+
+         ctxt.restore();
       }
    }
 
@@ -773,23 +850,41 @@ var Game = function ( ) {
    this.update = function ( t ) {
       this.t += t;
 
-      if ( this.state == 1 ) { // Breakout state
+      if ( this.transitionTo >= 0 ) {
+         if ( this.t - this.transitionT >= this.transitionDuration ) {
+            this.state = this.transitionTo;
+            this.transitionTo = -1;
+            this.transitionT = 0;
+         }
+      }
+
+      else if ( this.state == 1 ) { // Breakout state
          var outcome = this.breakout.update ( t );
          if ( outcome == 1 ) { // Player dead
-            this.state = 5;
-            this.transitionT = this.t;
+            // DEAD PLAYER TODO
          }
 
          if ( outcome == 2 ) { // Enemy dead
-            this.state = 3;
-            this.transitionT = this.t;
+            this.loot = new Loot();
+            this.loot.setup ( this.player, this.enemy );
+            this.transition ( 2 ); // Transition to loot
          }
       }
 
-      if ( this.state == 3 ) { // Breakout -> loot transition
-         if ( this.t - this.transitionT >= 5 )
-            this.state = 2;
+      else if ( this.state == 2 ) { // Loot state
+         if ( this.loot.update ( t ) ) {
+            console.log ( "OK, starting new breakout" );
+            this.randomEnemy();
+            this.breakout.setup( this.player, this.enemy );
+            this.transition ( 1 ); // Transition to breakout
+         }
       }
+   }
+
+   // Transition
+   this.transition = function ( to ) {
+      this.transitionT = this.t;
+      this.transitionTo = to;
    }
 }
 
@@ -843,7 +938,7 @@ var setup = function ( ) {
    font.finalize ();
 
    // Add functions to context
-   p1Ctxt.text = p2Ctxt.text = ctxt.text = function ( x, y, text, col ) { font.renderText ( this, x, y, text, col ); }
+   p1Ctxt.text = p2Ctxt.text = ctxt.text = function ( font, x, y, text, col ) { font.renderText ( this, x, y, text, col ); }
    p1Ctxt.hline = p2Ctxt.hline = ctxt.hline = function ( x1, x2, y ) {
       var a = Math.round ( Math.min(x1,x2)/3 ) * 3;
       var b = Math.round ( Math.max(x1,x2)/3 ) * 3;
@@ -862,7 +957,10 @@ var setup = function ( ) {
    // Register keys
    registerKey ( "left", "ArrowLeft" );
    registerKey ( "right", "ArrowRight" );
+   registerKey ( "down", "ArrowDown" );
+   registerKey ( "up", "ArrowUp" );
    registerKey ( "shoot", " " );
+   registerKey ( "enter", "Enter" );
    setupKeys();
 
    // Setup game
