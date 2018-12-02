@@ -112,8 +112,8 @@ var loadImages = function ( ) {
 
 // Game logic //////////////////////////////////////////////////////////////////
 
-const paddleAccel = 4000; // Paddle acceleration [pixels/s^2]
-const paddleDamp = 3; // Paddle damping factor [1/s]
+const paddleAccel = 7000; // Paddle acceleration [pixels/s^2]
+const paddleDamp = 10; // Paddle damping factor [1/s]
 const ballSpeed = 300; // Ball speed [pixels/second]
 
 var names = new RandName ( [ [ "Green ", "Blue ", "Red " ], // Color
@@ -497,7 +497,7 @@ var Breakout = function ( ) {
    // Breakout update
    this.update = function ( t ) {
       this.t += t;
-      t = t * (1 + 0.5 *(1 - Math.exp(-this.t / 100)));
+      t = t * (0.75 + 0.5 *(1 - Math.exp(-this.t / 100)));
 
       if ( sfxIntro.sfx.paused && sfxLoop.sfx.paused ) {
          sfxLoop.stop();
